@@ -159,7 +159,7 @@ std::unique_ptr<FuncAST> Parser::ParseDefinition() {
 // This is for parsign things that are not in functions eg `> 4+4`
 std::unique_ptr<FuncAST> Parser::ParseTopLevel () {
   if (auto expr = Parser::ParseExpression()) {
-    auto proto = llvm::make_unique<PrototypeAST>("", std::vector<std::string>());
+    auto proto = llvm::make_unique<PrototypeAST>("__anon_expr", std::vector<std::string>());
     return llvm::make_unique<FuncAST>(std::move(proto), std::move(expr));
   }
   return nullptr;
