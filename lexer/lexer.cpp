@@ -7,23 +7,26 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <iostream>
+#include <fstream>
 #include "lexer.h"
 
-// static std::string identifier;
-// static double value;
+bool isoporator (char opp) {
+  return opp == '+' || opp == '-' || opp == '*' || opp == '<';
+}
 
 int Lexer::getToken () {
   static int lastChar = ' ';
 
   // This is for skipping white space
-  while (isspace(lastChar))
-    lastChar = getchar();
+  while (isspace(lastChar) && ifs.good())
+    lastChar = ifs.get();
 
   if (isalpha(lastChar)) {// this means its a letter or number
     identifier = lastChar;
-    while (isalnum((lastChar = getchar())))
+    while (ifs.good() && isalnum((lastChar = ifs.get())))
       identifier += lastChar;
-
+    
     if (identifier == "func")
       return token_func;
     if (identifier == "export")
@@ -34,8 +37,10 @@ int Lexer::getToken () {
   if (isdigit(lastChar) || lastChar == '.') { // Means we should parse it as a number, eg 4+4, the `.` is for decimals
     std::string sNumber;
     do {
+      if (!ifs.good()) return token_eof;
+
       sNumber += lastChar;
-      lastChar = getchar();
+      lastChar = ifs.get();
     } while (isdigit(lastChar) || lastChar == '.');
 
     value = strtod(sNumber.c_str(), 0 ); // convert our stirng to double
@@ -45,7 +50,9 @@ int Lexer::getToken () {
   if (lastChar == '#') { //This is a comment
     // just go to the end of the line, becuase its a comment
     do {
-      lastChar = getchar();
+      if (!ifs.good()) return token_eof;
+
+      lastChar = ifs.get();
     } while (lastChar != EOF && lastChar != '\n' && lastChar != '\r');
 
     if (lastChar != EOF)
@@ -57,6 +64,6 @@ int Lexer::getToken () {
 
   // for anuthing else, just give the char ascii value
   int thisChar = lastChar;
-  lastChar = getchar();
+  lastChar = ifs.get();
   return thisChar;
 }

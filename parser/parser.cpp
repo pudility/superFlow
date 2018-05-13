@@ -48,9 +48,9 @@ std::unique_ptr<AST> Parser::ParseParens() {
 
 std::unique_ptr<AST> Parser::ParseIdentifier() {
   const std::string idName = mLexer->identifier;
-
+  
   getNextToken(); // Move past the identifier
-
+  
   if (currentToken != '(') // We are refrencing the var not function
     return llvm::make_unique<VariableAST>(idName);
 
@@ -79,6 +79,8 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
 }
 
 std::unique_ptr<AST> Parser::ParsePrimary () {
+  std::cout << "Parsing: " << currentToken << " (" << (char)currentToken << ")" << std::endl;
+
   switch(currentToken) {
     case Token::token_id:
       return ParseIdentifier();
@@ -86,7 +88,7 @@ std::unique_ptr<AST> Parser::ParsePrimary () {
       return ParseNumber();
     case '(':
       return ParseParens();
-    default:
+    default: 
       return LogError("unknown token recived - Parseing Error");
   } 
 }
@@ -101,10 +103,10 @@ int Parser::getTokenRank() {
 }
 
 std::unique_ptr<AST> Parser::ParseExpression() {
-  auto LHS = Parser::ParsePrimary();
+  auto LHS = ParsePrimary();
   if (!LHS) return nullptr;
-
-  return Parser::ParseBinaryOporatorRHS(0, std::move(LHS));
+  
+  return ParseBinaryOporatorRHS(0, std::move(LHS));
 }
 
 std::unique_ptr<AST> Parser::ParseBinaryOporatorRHS(int exprRank, std::unique_ptr<AST> LHS) {
@@ -115,6 +117,9 @@ std::unique_ptr<AST> Parser::ParseBinaryOporatorRHS(int exprRank, std::unique_pt
 
     int binaryOpporator = currentToken;
     getNextToken(); // Now that we know what it is, move past it
+
+    std::cout << "Parsing binary: " << currentToken << std::endl;
+    return nullptr;
 
     auto RHS = ParsePrimary();
     if (!RHS) return nullptr;
@@ -131,7 +136,7 @@ std::unique_ptr<AST> Parser::ParseBinaryOporatorRHS(int exprRank, std::unique_pt
 
 std::unique_ptr<PrototypeAST> Parser::ParsePrototype() {
   if (currentToken != Token::token_id) return LogErrorPlain("Expected function name (Prototype)");
-
+  
   std::string funcName = mLexer->identifier;
   getNextToken();
 
@@ -140,25 +145,29 @@ std::unique_ptr<PrototypeAST> Parser::ParsePrototype() {
   std::vector<std::string> argNames;
   while (getNextToken() == Token::token_id) argNames.push_back(mLexer->identifier);
   if (currentToken != ')') return LogErrorPlain("Expected to end with `)` (Prototype)");
-  
-  getNextToken(); // Move over the closing `)`
 
+  getNextToken(); // Move over the closing `)`
+  
   return llvm::make_unique<PrototypeAST>(funcName, std::move(argNames));
 }
 
 std::unique_ptr<FuncAST> Parser::ParseDefinition() {
   getNextToken(); // Move over `func`
   auto proto = ParsePrototype();
+  
   if (!proto) return nullptr;
-
-  if (auto expr = ParseExpression()) return llvm::make_unique<FuncAST>(std::move(proto), std::move(expr));
+  
+  if (auto expr = ParseExpression()) 
+    return llvm::make_unique<FuncAST>(std::move(proto), std::move(expr));
 
   return nullptr;
 }
 
 // This is for parsign things that are not in functions eg `> 4+4`
 std::unique_ptr<FuncAST> Parser::ParseTopLevel () {
-  if (auto expr = Parser::ParseExpression()) {
+  getNextToken(); // TODO: we really should not need to do this
+
+  if (auto expr = ParseExpression()) {
     auto proto = llvm::make_unique<PrototypeAST>("__anon_expr", std::vector<std::string>());
     return llvm::make_unique<FuncAST>(std::move(proto), std::move(expr));
   }

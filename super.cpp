@@ -12,6 +12,20 @@
 #include <vector>
 #include <iostream>
 
+static void handleFunc(Parser * &p) {
+  if (p->ParseDefinition())
+    std::cout << "Function" << std::endl;
+  else
+    std::cerr << "Error - failed to parse definition" << std::endl;
+}
+
+static void handleTopLevel(Parser * &p) {
+  if (p->ParseTopLevel())
+    std::cout << "Top Level" << std::endl;
+  else
+    std::cerr << "Error - failed to parse top level" << std::endl;
+}
+
 int main() {
   auto *p = new Parser();
   p->BinaryOpporatorRank['<'] = 10;
@@ -19,22 +33,17 @@ int main() {
   p->BinaryOpporatorRank['-'] = 20;
   p->BinaryOpporatorRank['*'] = 40;
 
-  std::cout << "# ";
   p->getNextToken();
 
   while (true) {
-    std::cout << "# ";
-
     switch(p->currentToken) { // TODO: all parsing should be caught and moved on from
       case Token::token_eof:
         return -1;
       case Token::token_func:
-        std::cout << "Function" << std::endl;
-        p->ParseDefinition();
+        handleFunc(p);
         break;
       default:
-        std::cout << "Top Level" << std::endl;
-        p->ParseTopLevel();
+        handleTopLevel(p);
         break;
     }
   }

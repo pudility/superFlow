@@ -1,9 +1,15 @@
 #pragma once
 
 #include <string>
+#include <fstream>
+#include <iostream>
 
 class Lexer {
+  private:
+  std::fstream ifs;
+
 	public:
+  Lexer(): ifs("tmpfile.spr", std::ifstream::in) { }
 	int getToken ();
   
   std::string identifier;
@@ -20,6 +26,6 @@ enum Token {
 
   // Primary commands
   token_id = -4,
-  token_number, // There is only one type of number (double presision float), so this works
+  token_number = -5, // There is only one type of number (double presision float), so this works
 };
 		
