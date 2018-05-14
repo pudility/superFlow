@@ -15,9 +15,11 @@
 #include <iostream>
 
 static void handleFunc(Parser * &p) {
-  if (p->ParseDefinition())
+  if (auto fnAST = p->ParseDefinition()) {
     std::cout << "Function" << std::endl;
-  else
+		if (auto *fnIR = fnAST->codeGen())
+			fnIR->print(llvm::errs());
+  } else
     std::cerr << "Error - failed to parse definition" << std::endl;
 }
 
