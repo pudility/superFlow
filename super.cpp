@@ -37,6 +37,9 @@ int main() {
 
   while (true) {
     switch(p->currentToken) { // TODO: all parsing should be caught and moved on from
+      case ';': // ignore top-level semicolons.
+        p->getNextToken();
+        break;
       case Token::token_eof:
         return -1;
       case Token::token_func:

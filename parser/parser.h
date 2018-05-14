@@ -1,6 +1,7 @@
 #include "../lexer/lexer.h"
 #include "../ast/ast.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/Value.h"
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
@@ -23,8 +24,10 @@ class Parser {
     std::map<char, int> BinaryOpporatorRank;
 
     // Basic
-    std::unique_ptr<AST> LogError (const char *str);
-    std::unique_ptr<PrototypeAST> LogErrorPlain(const char *str);
+    static std::unique_ptr<AST> LogError (const char *str);
+    static std::unique_ptr<PrototypeAST> LogErrorPlain(const char *str);
+
+    static llvm::Value *LogErrorV(const char *str);
 
     // Number Parsing
     std::unique_ptr<AST> ParseNumber();

@@ -21,7 +21,12 @@ std::unique_ptr<AST> Parser::LogError (const char *str) {
   return nullptr;
 }
 
- std::unique_ptr<PrototypeAST> Parser::LogErrorPlain(const char *str) {
+std::unique_ptr<PrototypeAST> Parser::LogErrorPlain(const char *str) {
+  LogError(str);
+  return nullptr;
+}
+
+llvm::Value *Parser::LogErrorV(const char *str) { // Right now this does the same thing as log error but it will be difforent later
   LogError(str);
   return nullptr;
 }
@@ -79,8 +84,6 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
 }
 
 std::unique_ptr<AST> Parser::ParsePrimary () {
-  std::cout << "Parsing: " << currentToken << " (" << (char)currentToken << ")" << std::endl;
-
   switch(currentToken) {
     case Token::token_id:
       return ParseIdentifier();
@@ -94,9 +97,7 @@ std::unique_ptr<AST> Parser::ParsePrimary () {
 }
 
 int Parser::getTokenRank() {
-  if (isascii(currentToken))
-    return -1;
-
+  //TODO: FIXME: if (isascii(currentToken)) return -1;
   int tokenRank = BinaryOpporatorRank[currentToken];
   if (tokenRank <= 0) return -1;
   return tokenRank;
@@ -117,9 +118,6 @@ std::unique_ptr<AST> Parser::ParseBinaryOporatorRHS(int exprRank, std::unique_pt
 
     int binaryOpporator = currentToken;
     getNextToken(); // Now that we know what it is, move past it
-
-    std::cout << "Parsing binary: " << currentToken << std::endl;
-    return nullptr;
 
     auto RHS = ParsePrimary();
     if (!RHS) return nullptr;
@@ -165,8 +163,6 @@ std::unique_ptr<FuncAST> Parser::ParseDefinition() {
 
 // This is for parsign things that are not in functions eg `> 4+4`
 std::unique_ptr<FuncAST> Parser::ParseTopLevel () {
-  getNextToken(); // TODO: we really should not need to do this
-
   if (auto expr = ParseExpression()) {
     auto proto = llvm::make_unique<PrototypeAST>("__anon_expr", std::vector<std::string>());
     return llvm::make_unique<FuncAST>(std::move(proto), std::move(expr));
