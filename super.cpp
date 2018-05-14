@@ -2,6 +2,8 @@
 #include "ast/ast.h"
 #include "lexer/lexer.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/Function.h"
+#include "llvm/Support/raw_ostream.h"
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
@@ -20,9 +22,11 @@ static void handleFunc(Parser * &p) {
 }
 
 static void handleTopLevel(Parser * &p) {
-  if (p->ParseTopLevel())
+  if (auto fnAST = p->ParseTopLevel()) {
     std::cout << "Top Level" << std::endl;
-  else
+    if (auto *fnIR = fnAST->codeGen()) //TODO: clean up printing
+			fnIR->print(llvm::errs());
+  } else
     std::cerr << "Error - failed to parse top level" << std::endl;
 }
 
@@ -50,7 +54,7 @@ int main() {
         break;
     }
   }
-  
+
   delete p;
   return 0;
 }
