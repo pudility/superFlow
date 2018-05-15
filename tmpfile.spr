@@ -1,1 +1,3 @@
-func foo(x) x + 4;
+extern sin(x);
+
+sin(3);

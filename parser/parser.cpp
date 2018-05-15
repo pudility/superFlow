@@ -169,3 +169,8 @@ std::unique_ptr<FuncAST> Parser::ParseTopLevel () {
   }
   return nullptr;
 }
+
+std::unique_ptr<PrototypeAST> Parser::ParseExtern() {
+  getNextToken(); // move past `extern`
+  return ParsePrototype();
+}

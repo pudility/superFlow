@@ -29,8 +29,8 @@ int Lexer::getToken () {
     
     if (identifier == "func")
       return token_func;
-    if (identifier == "export")
-      return token_export;
+    if (identifier == "extern")
+      return token_extern;
     return token_id;
   }
 

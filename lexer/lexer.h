@@ -22,7 +22,7 @@ enum Token {
 
   //Commands
   token_func = -2, //Functions
-  token_export = -3, //exportations
+  token_extern = -3, //exporternal functions
 
   // Primary commands
   token_id = -4,

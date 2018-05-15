@@ -87,9 +87,9 @@ Function *PrototypeAST::codeGen() {
 }
 
 Function *FuncAST::codeGen() {
-  Function *func = mModule->getFunction(prototype->getName());
+  Function *func = mModule->getFunction(prototype->getName()); // this checks if it already exists as part of llvm
   
-  if (!func) func  = prototype->codeGen();
+  if (!func) func = prototype->codeGen();
   
   if (!func) return nullptr;
 

@@ -32,6 +32,15 @@ static void handleTopLevel(Parser * &p) {
     std::cerr << "Error - failed to parse top level" << std::endl;
 }
 
+static void handleExtern(Parser * &p) {
+  if (auto fnAST = p->ParseExtern()) {
+    std::cout << "External" << std::endl;
+    if (auto *fnIR = fnAST->codeGen())
+      fnIR->print(llvm::errs());
+  } else
+    std::cerr << "Error - failed to parse extern" << std::endl;
+}
+
 int main() {
   auto *p = new Parser();
   p->BinaryOpporatorRank['<'] = 10;
@@ -50,6 +59,9 @@ int main() {
         return -1;
       case Token::token_func:
         handleFunc(p);
+        break;
+      case Token::token_extern:
+        handleExtern(p);
         break;
       default:
         handleTopLevel(p);
