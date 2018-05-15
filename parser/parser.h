@@ -14,6 +14,7 @@
 class Parser {
   private:
     Lexer *mLexer = new Lexer();
+    std::vector<std::string> namedFunctions;
 
   public:
     // Basics
@@ -36,6 +37,7 @@ class Parser {
     // Identification (funcs and vars)
     std::unique_ptr<AST> ParseIdentifier();
     std::unique_ptr<AST> ParsePrimary(); // Desicion maker
+    std::unique_ptr<FuncAST> ParseVariable();
 
     // Binary Parsing eg (4+4)
     int getTokenRank();

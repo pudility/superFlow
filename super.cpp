@@ -41,6 +41,15 @@ static void handleExtern(Parser * &p) {
     std::cerr << "Error - failed to parse extern" << std::endl;
 }
 
+static void handleVar(Parser * &p) {
+  if (auto fnAST = p->ParseVariable()) {
+    std::cout << "Variable" << std::endl;
+    if (auto *fnIR = fnAST->codeGen())
+      fnIR->print(llvm::errs());
+  } else
+    std::cerr << "Error - failed to parse variable" << std::endl;
+}
+
 int main() {
   auto *p = new Parser();
   p->BinaryOpporatorRank['<'] = 10;
@@ -54,6 +63,9 @@ int main() {
     switch(p->currentToken) { // TODO: all parsing should be caught and moved on from
       case ';': // ignore top-level semicolons.
         p->getNextToken();
+        break;
+      case Token::token_variable:
+        handleVar(p);
         break;
       case Token::token_eof:
         return -1;

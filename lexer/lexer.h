@@ -27,5 +27,6 @@ enum Token {
   // Primary commands
   token_id = -4,
   token_number = -5, // There is only one type of number (double presision float), so this works
+  token_variable = -6,
 };
 		

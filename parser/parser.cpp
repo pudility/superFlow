@@ -57,10 +57,17 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
   getNextToken(); // Move past the identifier
   
   std::vector<std::unique_ptr<AST>> arguments; // We need even an empty vector either way
+	
+	std::cout << "Function: " << idName << "\n Functions: ";
+	for (std::vector<std::string>::const_iterator i = namedFunctions.begin(); i != namedFunctions.end(); ++i)
+				std::cout << *i << ' ';
+  std::cout << std::endl;
 
-  if (currentToken != '(') // We are refrencing the var not function
-    return llvm::make_unique<CallAST>(idName, std::move(arguments)); // TODO: this is a hack, but we will just return a function that returns the value instead of an *actual* llvm variable
-
+  if (currentToken != '(') { // We are refrencing the var not function
+    if (std::find(namedFunctions.begin(), namedFunctions.end(), idName) != namedFunctions.end()) 
+			return llvm::make_unique<CallAST>(idName, std::move(arguments)); // TODO: this is a hack, but we will just return a function that returns the value instead of an *actual* llvm variable
+    else return llvm::make_unique<VariableAST>(idName);
+  }
   // This means that we are calling a function
   getNextToken(); // Move past opening parenthesis
   if (currentToken != ')') { // the function has arguments
@@ -73,8 +80,8 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
       if (currentToken == ')') // we reached the end of args
         break;
 
-      if (currentToken != ',') // we need separated commands or end //TODO: we want to change this maybe
-        return LogError("Expected either another argument separated by comma or a closing parenthesis");
+      // if (currentToken != ',') // we need separated commands or end //TODO: we want to change this maybe
+        // return LogError("Expected either another argument separated by comma or a closing parenthesis");
       getNextToken();
     }
   }
@@ -137,6 +144,7 @@ std::unique_ptr<PrototypeAST> Parser::ParsePrototype() {
   if (currentToken != Token::token_id) return LogErrorPlain("Expected function name (Prototype)");
   
   std::string funcName = mLexer->identifier;
+	namedFunctions.push_back(funcName); // make sure we know about it when we are deciding whats a function and whats a variable
   getNextToken();
 
   std::vector<std::string> argNames;
@@ -175,4 +183,18 @@ std::unique_ptr<FuncAST> Parser::ParseTopLevel () {
 std::unique_ptr<PrototypeAST> Parser::ParseExtern() {
   getNextToken(); // move past `extern`
   return ParsePrototype();
+}
+
+std::unique_ptr<FuncAST> Parser::ParseVariable() {
+	getNextToken(); // Move over `var`
+  std::cout << "token: " << currentToken << std::endl;
+  const std::string idName = mLexer->identifier;
+	namedFunctions.push_back(idName); // make sure we know about it when we are deciding whats a function and whats a variable
+  getNextToken();
+  std::cout << "id: " << idName << std::endl;
+  std::vector<std::string> arguments;
+  auto proto = llvm::make_unique<PrototypeAST>(idName, std::move(arguments));
+  if (auto expr = ParseExpression()) 
+    return llvm::make_unique<FuncAST>(std::move(proto), std::move(expr));
+  return nullptr;
 }

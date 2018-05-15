@@ -10,6 +10,20 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "llvm/ADT/APFloat.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Verifier.h"
+#include "llvm/IR/Module.h"
+
+using namespace llvm;
+
+static LLVMContext mContext;
+static IRBuilder<> mBuilder(mContext);
+static std::unique_ptr<Module> mModule = make_unique<Module>("Super", mContext);
+static std::map<std::string, Value *> namedValues;
+static Module *M = mModule.get();
 
 class AST {
   public:
@@ -27,8 +41,10 @@ class NumberAST: public AST {
 
 class VariableAST: public AST {
   std::string name;
-  
+
   public:
+  std::map<std::string, Value *> mNamedValues = namedValues;
+
   VariableAST(const std::string &name): name(name) { }
   llvm::Value *codeGen() override;
 };

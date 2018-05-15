@@ -31,6 +31,8 @@ int Lexer::getToken () {
       return token_func;
     if (identifier == "extern")
       return token_extern;
+    if (identifier == "var")
+      return token_variable;
     return token_id;
   }
 

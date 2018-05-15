@@ -20,12 +20,6 @@
 
 using namespace llvm;
 
-static LLVMContext mContext;
-static IRBuilder<> mBuilder(mContext);
-static std::unique_ptr<Module> mModule = make_unique<Module>("Super", mContext);
-static std::map<std::string, Value *> namedValues;
-static Module *M = mModule.get();
-
 Value *NumberAST::codeGen() {
   return ConstantFP::get(mContext, APFloat(val));
 }
