@@ -56,12 +56,13 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
   
   getNextToken(); // Move past the identifier
   
+  std::vector<std::unique_ptr<AST>> arguments; // We need even an empty vector either way
+
   if (currentToken != '(') // We are refrencing the var not function
-    return llvm::make_unique<VariableAST>(idName);
+    return llvm::make_unique<CallAST>(idName, std::move(arguments)); // TODO: this is a hack, but we will just return a function that returns the value instead of an *actual* llvm variable
 
   // This means that we are calling a function
   getNextToken(); // Move past opening parenthesis
-  std::vector<std::unique_ptr<AST>> arguments;
   if (currentToken != ')') { // the function has arguments
     while (true) {
       if (auto arg = ParseExpression())
@@ -138,14 +139,15 @@ std::unique_ptr<PrototypeAST> Parser::ParsePrototype() {
   std::string funcName = mLexer->identifier;
   getNextToken();
 
-  if (currentToken != '(') return LogErrorPlain("Expected `(` in prototype");
-
   std::vector<std::string> argNames;
-  while (getNextToken() == Token::token_id) argNames.push_back(mLexer->identifier);
-  if (currentToken != ')') return LogErrorPlain("Expected to end with `)` (Prototype)");
 
-  getNextToken(); // Move over the closing `)`
-  
+  if (currentToken == '(') { // return LogErrorPlain("Expected `(` in prototype");
+    while (getNextToken() == Token::token_id) argNames.push_back(mLexer->identifier);
+    if (currentToken != ')') return LogErrorPlain("Expected to end with `)` (Prototype)");
+
+    getNextToken(); // Move over the closing `)`
+  }
+
   return llvm::make_unique<PrototypeAST>(funcName, std::move(argNames));
 }
 
