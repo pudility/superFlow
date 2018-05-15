@@ -43,8 +43,6 @@ class VariableAST: public AST {
   std::string name;
 
   public:
-  std::map<std::string, Value *> mNamedValues = namedValues;
-
   VariableAST(const std::string &name): name(name) { }
   llvm::Value *codeGen() override;
 };
