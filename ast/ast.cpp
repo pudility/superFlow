@@ -36,11 +36,23 @@ Value *ArrayAST::codeGen() {
   Type *dType = Type::getDoubleTy(mContext);
   Type *vectorType = VectorType::get(dType, 4);
   Value *emptyVector = UndefValue::get(vectorType);
-  Constant *index0 = Constant::getIntegerValue(dType, llvm::APInt(32, 0));
-  Value *numberValue = numbers[0] -> codeGen();
-  numberValue->print(errs());
-  Instruction *fullVector = InsertElementInst::Create(emptyVector, numberValue, index0);
+  Constant *indexT = Constant::getIntegerValue(dType, llvm::APInt(32, 0));
+  
+  std::vector<Value *> numberValues;
+  Instruction *fullVector = InsertElementInst::Create(emptyVector, numbers[0]->codeGen(), indexT);
   mBuilder.Insert(fullVector);
+
+  int i = 0;
+
+  for(auto const& n: numbers) {
+    if (i == 0) goto end; // We already did this one when we set fullVector
+    indexT = Constant::getIntegerValue(dType, llvm::APInt(32, i));
+    fullVector = InsertElementInst::Create(fullVector, n->codeGen(), indexT);
+    mBuilder.Insert(fullVector);
+end:;
+    i++;
+  }
+
   return fullVector;
 }
 
