@@ -52,8 +52,6 @@ std::unique_ptr<AST> Parser::ParseParens() {
 }
 
 std::unique_ptr<AST> Parser::ParseArray() {
-  std::cout << "Parsing array" << std::endl;
-
   getNextToken(); // Move past `[`
   std::vector<std::unique_ptr<AST>> numbers;
 
