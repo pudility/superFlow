@@ -17,6 +17,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Instructions.h"
 
 using namespace llvm;
 
@@ -29,6 +30,18 @@ Value *VariableAST::codeGen() {
   if (!v) Parser::LogErrorV("Unknown Variable Name");
 
   return v; // Its okay to rutun v even if it is a nullptr - that will just bubble up the error
+}
+
+Value *ArrayAST::codeGen() {
+  Type *dType = Type::getDoubleTy(mContext);
+  Type *vectorType = VectorType::get(dType, 4);
+  Value *emptyVector = UndefValue::get(vectorType);
+  Constant *index0 = Constant::getIntegerValue(dType, llvm::APInt(32, 0));
+  Value *numberValue = numbers[0] -> codeGen();
+  numberValue->print(errs());
+  Instruction *fullVector = InsertElementInst::Create(emptyVector, numberValue, index0);
+  mBuilder.Insert(fullVector);
+  return fullVector;
 }
 
 Value *BinaryAST::codeGen() {
@@ -69,8 +82,10 @@ Value *CallAST::codeGen() {
 
 Function *PrototypeAST::codeGen() {
   std::vector<Type*> doubles(arguments.size(), Type::getDoubleTy(mContext));
-
-  FunctionType *FT = FunctionType::get(Type::getDoubleTy(mContext), doubles, false);
+  Type *dType = Type::getDoubleTy(mContext);
+  FunctionType *FT = FunctionType::get(type == VarType::type_double ? 
+      dType : VectorType::get(dType, 4)
+      , doubles, false);
   Function *f = Function::Create(FT, Function::ExternalLinkage, name, M);
 
   unsigned index = 0;

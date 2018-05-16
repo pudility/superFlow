@@ -2,5 +2,5 @@ Currently this projects is in *very early* stages. Right now it is just a lexer/
 
 To run:
 ```bash
-clang++ super.cpp lexer/lexer.cpp parser/parser.cpp
+clang++ super.cpp ast/ast.cpp lexer/lexer.cpp parser/parser.cpp `llvm-config --cxxflags --ldflags --system-libs --libs core`
 ```

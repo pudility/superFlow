@@ -1,3 +1,5 @@
-var x 10;
+array x [1 2 3];
 
-func add (a) a + x;
+extern printf(str);
+
+printf(x);

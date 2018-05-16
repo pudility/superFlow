@@ -2,6 +2,7 @@
 
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/IR/Value.h"
+#include "../lexer/lexer.h"
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
@@ -16,6 +17,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Instructions.h"
 
 using namespace llvm;
 
@@ -36,6 +38,14 @@ class NumberAST: public AST {
 
   public:
   NumberAST(double val): val(val) { }
+  llvm::Value *codeGen() override;
+};
+
+class ArrayAST: public AST {
+  std::vector<std::unique_ptr<AST>> numbers;
+
+  public:
+  ArrayAST(std::vector<std::unique_ptr<AST>> numbers): numbers(std::move(numbers)) { }
   llvm::Value *codeGen() override;
 };
 
@@ -70,10 +80,11 @@ class CallAST: public AST {
 class PrototypeAST {
   std::string name;
   std::vector<std::string> arguments;
+  VarType type;
 
   public:
-  PrototypeAST(const std::string &name, std::vector<std::string> arguments): 
-    name(name), arguments(std::move(arguments)) { }
+  PrototypeAST(const std::string &name, std::vector<std::string> arguments, VarType type): 
+    name(name), arguments(std::move(arguments)), type(type) { }
   const std::string &getName() const { return name; }
   llvm::Function *codeGen();
 };
@@ -87,5 +98,4 @@ class FuncAST {
     prototype(std::move(prototype)), body(std::move(body)) { }
   llvm::Function *codeGen();
 };
-
 
