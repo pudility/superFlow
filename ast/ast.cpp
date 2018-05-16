@@ -39,8 +39,8 @@ Value *ArrayAST::codeGen() {
   Constant *index0 = Constant::getIntegerValue(dType, llvm::APInt(32, 0));
   Value *numberValue = numbers[0] -> codeGen();
   numberValue->print(errs());
-  Value *fullVector = InsertElementInst::Create(emptyVector, numberValue, index0);
-  // namedValues[name] = fullVector;
+  Instruction *fullVector = InsertElementInst::Create(emptyVector, numberValue, index0);
+  mBuilder.Insert(fullVector);
   return fullVector;
 }
 

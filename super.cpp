@@ -16,7 +16,7 @@
 
 static void handleFunc(Parser * &p) {
   if (auto fnAST = p->ParseDefinition()) {
-    std::cout << "Function" << std::endl;
+    // std::cout << "Function" << std::endl;
 		if (auto *fnIR = fnAST->codeGen())
 			fnIR->print(llvm::errs());
   } else
@@ -25,7 +25,7 @@ static void handleFunc(Parser * &p) {
 
 static void handleTopLevel(Parser * &p) {
   if (auto fnAST = p->ParseTopLevel()) {
-    std::cout << "Top Level" << std::endl;
+    // std::cout << "Top Level" << std::endl;
     if (auto *fnIR = fnAST->codeGen()) //TODO: clean up printing
 			fnIR->print(llvm::errs());
   } else
@@ -34,7 +34,7 @@ static void handleTopLevel(Parser * &p) {
 
 static void handleExtern(Parser * &p) {
   if (auto fnAST = p->ParseExtern()) {
-    std::cout << "External" << std::endl;
+    // std::cout << "External" << std::endl;
     if (auto *fnIR = fnAST->codeGen())
       fnIR->print(llvm::errs());
   } else
@@ -43,7 +43,7 @@ static void handleExtern(Parser * &p) {
 
 static void handleVar(Parser * &p) {
   if (auto fnAST = p->ParseVariable(VarType::type_double)) {
-    std::cout << "Variable" << std::endl;
+    // std::cout << "Variable" << std::endl;
     if (auto *fnIR = fnAST->codeGen())
       fnIR->print(llvm::errs());
   } else
@@ -52,22 +52,14 @@ static void handleVar(Parser * &p) {
 
 static void handleArrayVar(Parser * &p) {
   if (auto fnAST = p->ParseVariable(VarType::type_array)) {
-    std::cout << "Array Variable" << std::endl;
+    // std::cout << "Array Variable" << std::endl;
     if (auto *fnIR = fnAST->codeGen())
       fnIR->print(llvm::errs());
   } else
     std::cerr << "Error - failed to parse variable" << std::endl;
 }
 
-int main() {
-  auto *p = new Parser();
-  p->BinaryOpporatorRank['<'] = 10;
-  p->BinaryOpporatorRank['+'] = 20;
-  p->BinaryOpporatorRank['-'] = 20;
-  p->BinaryOpporatorRank['*'] = 40;
-
-  p->getNextToken();
-
+static int mainLoop(Parser * &p) {
   while (true) {
     switch(p->currentToken) { // TODO: all parsing should be caught and moved on from
       case ';': // ignore top-level semicolons.
@@ -92,6 +84,18 @@ int main() {
         break;
     }
   }
+}
+
+int main() {
+  auto *p = new Parser();
+  p->BinaryOpporatorRank['<'] = 10;
+  p->BinaryOpporatorRank['+'] = 20;
+  p->BinaryOpporatorRank['-'] = 20;
+  p->BinaryOpporatorRank['*'] = 40;
+
+  p->getNextToken();
+
+  mainLoop(p);
 
   delete p;
   return 0;

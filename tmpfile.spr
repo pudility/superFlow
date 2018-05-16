@@ -1,5 +1,5 @@
 array x [1 2 3];
 
-func add (a b) a + b;
+extern printf(str);
 
-add(10,5);
+printf(x);
