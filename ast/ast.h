@@ -16,6 +16,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Instructions.h"
 
 using namespace llvm;
 
@@ -36,6 +37,14 @@ class NumberAST: public AST {
 
   public:
   NumberAST(double val): val(val) { }
+  llvm::Value *codeGen() override;
+};
+
+class ArrayAST: public AST {
+  std::vector<std::unique_ptr<AST>> numbers;
+
+  public:
+  ArrayAST(std::vector<std::unique_ptr<AST>> numbers): numbers(std::move(numbers)) { }
   llvm::Value *codeGen() override;
 };
 
@@ -87,5 +96,4 @@ class FuncAST {
     prototype(std::move(prototype)), body(std::move(body)) { }
   llvm::Function *codeGen();
 };
-
 

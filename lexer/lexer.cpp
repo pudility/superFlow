@@ -22,7 +22,7 @@ int Lexer::getToken () {
   while (isspace(lastChar) && ifs.good())
     lastChar = ifs.get();
 
-  if (isalpha(lastChar)) {// this means its a letter or number
+  if (isalpha(lastChar)) { // this means its a letter or number
     identifier = lastChar;
     while (ifs.good() && isalnum((lastChar = ifs.get())))
       identifier += lastChar;
@@ -40,10 +40,11 @@ int Lexer::getToken () {
     std::string sNumber;
     do {
       if (!ifs.good()) return token_eof;
+      if (isspace(lastChar)) break;
 
       sNumber += lastChar;
       lastChar = ifs.get();
-    } while (isdigit(lastChar) || lastChar == '.');
+    } while ((isdigit(lastChar) || lastChar == '.') && !isspace(lastChar));
 
     value = strtod(sNumber.c_str(), 0 ); // convert our stirng to double
     return token_number;

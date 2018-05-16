@@ -17,6 +17,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Instructions.h"
 
 using namespace llvm;
 
@@ -29,6 +30,15 @@ Value *VariableAST::codeGen() {
   if (!v) Parser::LogErrorV("Unknown Variable Name");
 
   return v; // Its okay to rutun v even if it is a nullptr - that will just bubble up the error
+}
+
+Value *ArrayAST::codeGen() {
+  Type *u32Type = Type::getInt32Ty(mContext);
+  Type *vectorType = VectorType::get(u32Type, 4);
+  Value *emptyVector = UndefValue::get(vectorType);
+  Constant *index0 = Constant::getIntegerValue(u32Type, llvm::APInt(32, 0));
+  Value *numberValue = numbers[0] -> codeGen();
+  return InsertElementInst::Create(emptyVector, numberValue, index0);
 }
 
 Value *BinaryAST::codeGen() {

@@ -51,6 +51,20 @@ std::unique_ptr<AST> Parser::ParseParens() {
   return expression;
 }
 
+std::unique_ptr<AST> Parser::ParseArray() {
+  std::cout << "Parsing array" << std::endl;
+
+  getNextToken(); // Move past `[`
+  std::vector<std::unique_ptr<AST>> numbers;
+
+  while (currentToken != ']')
+    numbers.push_back(ParseNumber());
+  
+  getNextToken(); // Move over `]`
+
+  return llvm::make_unique<ArrayAST>(std::move(numbers));
+}
+
 std::unique_ptr<AST> Parser::ParseIdentifier() {
   const std::string idName = mLexer->identifier;
   
@@ -78,7 +92,7 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
       if (currentToken == ')') // we reached the end of args
         break;
 
-      // TODO: look into this a little more
+      // TODO: make sure this works
       // if (currentToken != ',') // we need separated commands or end //TODO: we want to change this maybe
         // return LogError("Expected either another argument separated by comma or a closing parenthesis");
       getNextToken();
@@ -96,6 +110,8 @@ std::unique_ptr<AST> Parser::ParsePrimary () {
       return ParseIdentifier();
     case Token::token_number:
       return ParseNumber();
+    case '[':
+      return ParseArray();
     case '(':
       return ParseParens();
     default: 
@@ -113,7 +129,7 @@ int Parser::getTokenRank() {
 std::unique_ptr<AST> Parser::ParseExpression() {
   auto LHS = ParsePrimary();
   if (!LHS) return nullptr;
-  
+   
   return ParseBinaryOporatorRHS(0, std::move(LHS));
 }
 

@@ -33,6 +33,7 @@ class Parser {
     // Number Parsing
     std::unique_ptr<AST> ParseNumber();
     std::unique_ptr<AST> ParseParens();  
+    std::unique_ptr<AST> ParseArray();
 
     // Identification (funcs and vars)
     std::unique_ptr<AST> ParseIdentifier();
