@@ -99,3 +99,17 @@ class FuncAST {
   llvm::Function *codeGen();
 };
 
+class ForAST: public AST {
+  std::string varName;
+  std::unique_ptr<AST> start, end, step, body;
+  
+  public:
+  ForAST(const std::string &varName,
+      std::unique_ptr<AST> start,
+      std::unique_ptr<AST> end,
+      std::unique_ptr<AST> step,
+      std::unique_ptr<AST> body): 
+    varName(varName), start(std::move(start)), end(std::move(end)), step(std::move(step)), body(std::move(body)) { }
+  llvm::Value *codeGen() override;
+};
+

@@ -21,6 +21,8 @@
 
 using namespace llvm;
 
+static Type *dType = Type::getDoubleTy(mContext);
+
 Value *NumberAST::codeGen() {
   return ConstantFP::get(mContext, APFloat(val));
 }
@@ -93,8 +95,8 @@ Value *CallAST::codeGen() {
 }
 
 Function *PrototypeAST::codeGen() {
-  std::vector<Type*> doubles(arguments.size(), Type::getDoubleTy(mContext));
-  Type *dType = Type::getDoubleTy(mContext);
+  std::vector<Type*> doubles(arguments.size(), dType);
+  
   FunctionType *FT = FunctionType::get(type == VarType::type_double ? 
       dType : VectorType::get(dType, 4)
       , doubles, false);
@@ -133,4 +135,54 @@ Function *FuncAST::codeGen() {
 
   func->removeFromParent(); // If there is an error get rid of the function
   return nullptr;
+}
+
+Value *ForAST::codeGen() {
+  Value *startV = start->codeGen();
+  if (!startV) return nullptr;
+
+  Function *func = mBuilder.GetInsertBlock()->getParent();
+  BasicBlock *preHeaderBlock = mBuilder.GetInsertBlock();
+  BasicBlock *loopBlock = BasicBlock::Create(mContext, "loop", func);
+
+  mBuilder.CreateBr(loopBlock);
+  mBuilder.SetInsertPoint(loopBlock);
+
+  PHINode *var = mBuilder.CreatePHI(dType, 2, varName);
+  var->addIncoming(startV, preHeaderBlock);
+
+  Value *oldVal = namedValues[varName];
+  namedValues[varName] = var;
+
+  if (!body->codeGen())
+    return nullptr;
+
+  Value *stepVal = nullptr;
+  if (step) {
+    stepVal = step->codeGen();
+    if (!stepVal) return nullptr;
+  } else {
+    stepVal = ConstantFP::get(mContext, APFloat(1.0)); // If nothing was specified then just add 1.0
+  }
+
+  Value *nextVar = mBuilder.CreateFAdd(var, stepVal, "nextvar");
+  Value *endCondition = end->codeGen();
+  if (!endCondition) return nullptr;
+
+  endCondition = mBuilder.CreateFCmpONE(endCondition, ConstantFP::get(mContext, APFloat(0.0)), "loopcond");
+
+  BasicBlock *loopEndBlock = mBuilder.GetInsertBlock();
+  BasicBlock *afterBlock = BasicBlock::Create(mContext, "afterloop", func);
+
+  mBuilder.CreateCondBr(endCondition, loopBlock, afterBlock);
+
+  mBuilder.SetInsertPoint(afterBlock);
+  var->addIncoming(nextVar, loopEndBlock);
+
+  if (oldVal)
+    namedValues[varName] = oldVal;
+  else
+    namedValues.erase(varName);
+
+  return Constant::getNullValue(dType); // For loops always return 0.0
 }

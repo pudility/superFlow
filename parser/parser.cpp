@@ -112,7 +112,12 @@ std::unique_ptr<AST> Parser::ParsePrimary () {
       return ParseArray();
     case '(':
       return ParseParens();
+    case Token::token_for:
+      return ParseFor();
+    case Token::token_eof:
+      return nullptr; //TODO: handle this better
     default: 
+      std::cerr << "Error with Token: " << currentToken << " (" << (char) currentToken << ") " << std::endl;
       return LogError("unknown token recived - Parseing Error");
   } 
 }
@@ -215,4 +220,44 @@ std::unique_ptr<FuncAST> Parser::ParseVariable(VarType type) {
     return llvm::make_unique<FuncAST>(std::move(proto), std::move(expr));
 
   return nullptr;
+}
+
+//'for' identifier '=' expr ',' expr (',' expr)? 'in' expression
+std::unique_ptr<AST> Parser::ParseFor() {
+  getNextToken(); // Move past `for`
+  
+  if (currentToken != Token::token_id) 
+    return LogError("expected identifier after for");
+
+  std::string idName = mLexer->identifier;
+  getNextToken(); // Move past identifier
+
+  if (currentToken != '=')
+    return LogError("expected '=' after for");
+  getNextToken(); // move past `=`
+
+  auto start = ParseExpression();
+  if (!start) return nullptr;
+  if (currentToken != ',') 
+    return LogError("expected ',' after for start value");
+  getNextToken(); // Move past `,`
+
+  auto end = ParseExpression();
+  if (!end) return nullptr;
+
+  std::unique_ptr<AST> step;
+  if (currentToken == ',') { // the step is optional
+    getNextToken(); // Move over `,`
+    step = ParseExpression();
+    if (!step) return nullptr;
+  }
+
+//   if (currentToken != Token::token_in)
+//     return LogError("expected 'in' after for");
+//   getNextToken(); // Move past `in`
+
+  auto body = ParseExpression();
+  if (!body) return nullptr;
+
+  return llvm::make_unique<ForAST> (idName, std::move(start), std::move(end), std::move(start), std::move(body));
 }

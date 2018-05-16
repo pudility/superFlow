@@ -52,4 +52,5 @@ class Parser {
     std::unique_ptr<FuncAST> ParseDefinition();
     std::unique_ptr<FuncAST> ParseTopLevel();
     std::unique_ptr<PrototypeAST> ParseExtern();
+    std::unique_ptr<AST> ParseFor();
 };

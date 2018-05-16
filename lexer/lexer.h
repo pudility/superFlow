@@ -29,6 +29,8 @@ enum Token {
   token_number = -5, // There is only one type of number (double presision float), so this works
   token_variable = -6,
   token_array = -7,
+  token_for = -8,
+  token_in = -9,
 };
 
 enum class VarType {
