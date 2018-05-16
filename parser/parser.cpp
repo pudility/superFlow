@@ -21,7 +21,7 @@ std::unique_ptr<AST> Parser::LogError (const char *str) {
   return nullptr;
 }
 
-std::unique_ptr<PrototypeAST> Parser::LogErrorPlain(const char *str) {
+std::unique_ptr<PrototypeAST> Parser::LogErrorPlain(const char *str) { // TODO: Prototype not Plain
   LogError(str);
   return nullptr;
 }
@@ -171,7 +171,9 @@ std::unique_ptr<PrototypeAST> Parser::ParsePrototype() {
     getNextToken(); // Move over the closing `)`
   }
 
-  return llvm::make_unique<PrototypeAST>(funcName, std::move(argNames));
+  return llvm::make_unique<PrototypeAST>(funcName, std::move(argNames), VarType::type_double); //TODO: functions that can return any type
+
+
 }
 
 std::unique_ptr<FuncAST> Parser::ParseDefinition() {
@@ -182,14 +184,14 @@ std::unique_ptr<FuncAST> Parser::ParseDefinition() {
   
   if (auto expr = ParseExpression()) 
     return llvm::make_unique<FuncAST>(std::move(proto), std::move(expr));
-
+  
   return nullptr;
 }
 
 // This is for parsign things that are not in functions eg `> 4+4`
 std::unique_ptr<FuncAST> Parser::ParseTopLevel () {
   if (auto expr = ParseExpression()) {
-    auto proto = llvm::make_unique<PrototypeAST>("__anon_expr", std::vector<std::string>());
+    auto proto = llvm::make_unique<PrototypeAST>("__anon_expr" /* TODO: this should add a coutner so that there can be mutiple */, std::vector<std::string>(), VarType::type_double);
     return llvm::make_unique<FuncAST>(std::move(proto), std::move(expr));
   }
   return nullptr;
@@ -200,8 +202,8 @@ std::unique_ptr<PrototypeAST> Parser::ParseExtern() {
   return ParsePrototype();
 }
 
-std::unique_ptr<FuncAST> Parser::ParseVariable() {
-	getNextToken(); // Move over `var`
+std::unique_ptr<FuncAST> Parser::ParseVariable(VarType type) {
+  getNextToken(); // Move over `var`
 
   const std::string idName = mLexer->identifier;
 	namedFunctions.push_back(idName); // make sure we know about it when we are deciding whats a function and whats a variable
@@ -209,7 +211,7 @@ std::unique_ptr<FuncAST> Parser::ParseVariable() {
   getNextToken();
   
   std::vector<std::string> arguments;
-  auto proto = llvm::make_unique<PrototypeAST>(idName, std::move(arguments));
+  auto proto = llvm::make_unique<PrototypeAST>(idName, std::move(arguments), type);
   
   if (auto expr = ParseExpression()) 
     return llvm::make_unique<FuncAST>(std::move(proto), std::move(expr));

@@ -2,6 +2,7 @@
 
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/IR/Value.h"
+#include "../lexer/lexer.h"
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
@@ -79,10 +80,11 @@ class CallAST: public AST {
 class PrototypeAST {
   std::string name;
   std::vector<std::string> arguments;
+  VarType type;
 
   public:
-  PrototypeAST(const std::string &name, std::vector<std::string> arguments): 
-    name(name), arguments(std::move(arguments)) { }
+  PrototypeAST(const std::string &name, std::vector<std::string> arguments, VarType type): 
+    name(name), arguments(std::move(arguments)), type(type) { }
   const std::string &getName() const { return name; }
   llvm::Function *codeGen();
 };

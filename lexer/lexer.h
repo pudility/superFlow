@@ -30,4 +30,9 @@ enum Token {
   token_variable = -6,
   token_array = -7,
 };
-		
+
+enum class VarType {
+  type_double,
+  type_array
+};
+

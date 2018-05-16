@@ -33,12 +33,15 @@ Value *VariableAST::codeGen() {
 }
 
 Value *ArrayAST::codeGen() {
-  Type *u32Type = Type::getInt32Ty(mContext);
-  Type *vectorType = VectorType::get(u32Type, 4);
+  Type *dType = Type::getDoubleTy(mContext);
+  Type *vectorType = VectorType::get(dType, 4);
   Value *emptyVector = UndefValue::get(vectorType);
-  Constant *index0 = Constant::getIntegerValue(u32Type, llvm::APInt(32, 0));
+  Constant *index0 = Constant::getIntegerValue(dType, llvm::APInt(32, 0));
   Value *numberValue = numbers[0] -> codeGen();
-  return InsertElementInst::Create(emptyVector, numberValue, index0);
+  numberValue->print(errs());
+  Value *fullVector = InsertElementInst::Create(emptyVector, numberValue, index0);
+  // namedValues[name] = fullVector;
+  return fullVector;
 }
 
 Value *BinaryAST::codeGen() {
@@ -79,8 +82,10 @@ Value *CallAST::codeGen() {
 
 Function *PrototypeAST::codeGen() {
   std::vector<Type*> doubles(arguments.size(), Type::getDoubleTy(mContext));
-
-  FunctionType *FT = FunctionType::get(Type::getDoubleTy(mContext), doubles, false);
+  Type *dType = Type::getDoubleTy(mContext);
+  FunctionType *FT = FunctionType::get(type == VarType::type_double ? 
+      dType : VectorType::get(dType, 4)
+      , doubles, false);
   Function *f = Function::Create(FT, Function::ExternalLinkage, name, M);
 
   unsigned index = 0;

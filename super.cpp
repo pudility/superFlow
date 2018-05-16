@@ -42,8 +42,17 @@ static void handleExtern(Parser * &p) {
 }
 
 static void handleVar(Parser * &p) {
-  if (auto fnAST = p->ParseVariable()) {
+  if (auto fnAST = p->ParseVariable(VarType::type_double)) {
     std::cout << "Variable" << std::endl;
+    if (auto *fnIR = fnAST->codeGen())
+      fnIR->print(llvm::errs());
+  } else
+    std::cerr << "Error - failed to parse variable" << std::endl;
+}
+
+static void handleArrayVar(Parser * &p) {
+  if (auto fnAST = p->ParseVariable(VarType::type_array)) {
+    std::cout << "Array Variable" << std::endl;
     if (auto *fnIR = fnAST->codeGen())
       fnIR->print(llvm::errs());
   } else
@@ -74,6 +83,9 @@ int main() {
         break;
       case Token::token_extern:
         handleExtern(p);
+        break;
+      case Token::token_array:
+        handleArrayVar(p);
         break;
       default:
         handleTopLevel(p);
