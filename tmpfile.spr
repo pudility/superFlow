@@ -1,3 +1,10 @@
-for i = 0, i < 10, 5 (
+func twice () for i = 0, i < 10, 5 (
   4 + 4
 )
+
+func add (a b )
+  a + b
+
+for i = 0, i < 10, 5 (i)
+
+# I am a comment
