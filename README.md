@@ -23,6 +23,11 @@ func add (a b)
   a + b
 ```
 
+Then just call it like this:
+```
+add (1, 2) # notice that simi colons are used here
+```
+
 ### Loops
 ---
 ```
