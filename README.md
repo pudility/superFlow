@@ -47,7 +47,7 @@ Here is an example of creating a variable:
 ```
 var x 10
 ```
-Above is an example of a *fake* variable or a fariable that is just a function pretending to be a variable.
+Above is an example of a *fake* variable or a variable that is just a function pretending to be a variable.
 
 The only time *real* variables are used is in things like functions and loops:
 ```
