@@ -21,7 +21,16 @@
 
 using namespace llvm;
 
-static Type *dType = Type::getDoubleTy(mContext);
+Function *getFunc(std::string name) {
+  if (auto *func = mModule->getFunction(name))
+    return func;
+
+  auto FI = functionPrototypes.find(name);
+  if (FI != functionPrototypes.end())
+    return FI->second->codeGen();
+
+  return nullptr;
+}
 
 Value *NumberAST::codeGen() {
   return ConstantFP::get(mContext, APFloat(val));
@@ -110,13 +119,11 @@ Function *PrototypeAST::codeGen() {
 }
 
 Function *FuncAST::codeGen() {
-  Function *func = mModule->getFunction(prototype->getName()); // this checks if it already exists as part of llvm
-  
-  if (!func) func = prototype->codeGen();
-  
-  if (!func) return nullptr;
+	auto &p = *prototype;
+	functionPrototypes[prototype->getName()] = std::move(prototype);
+	Function *func = getFunc(p.getName());
 
-  if (!func->empty()) return (Function*) Parser::LogErrorV("Function cannot be redefined.");
+	if (!func) return nullptr;
 
   BasicBlock *block = BasicBlock::Create(mContext, "entry", func);
   mBuilder.SetInsertPoint(block);
@@ -129,6 +136,8 @@ Function *FuncAST::codeGen() {
     mBuilder.CreateRet(returnValue);
 
     llvm::verifyFunction(*func);
+    // if (!mFPM) initPassManager();
+    // mFPM->run(*func); // Optimize the function
 
     return func;
   }

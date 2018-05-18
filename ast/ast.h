@@ -18,14 +18,10 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/ExecutionEngine/JIT.h"
 
 using namespace llvm;
-
-static LLVMContext mContext;
-static IRBuilder<> mBuilder(mContext);
-static std::unique_ptr<Module> mModule = make_unique<Module>("Super", mContext);
-static std::map<std::string, Value *> namedValues;
-static Module *M = mModule.get();
 
 class AST {
   public:
@@ -113,3 +109,14 @@ class ForAST: public AST {
   llvm::Value *codeGen() override;
 };
 
+static LLVMContext mContext;
+static IRBuilder<> mBuilder(mContext);
+static std::unique_ptr<Module> mModule = make_unique<Module>("Super", mContext);
+static std::map<std::string, Value *> namedValues;
+static Module *M = mModule.get();
+static std::unique_ptr<legacy::FunctionPassManager> mFPM;
+// static std::unique_ptr<llvm::orc::KaleidoscopeJIT> mJIT = llvm::make_unique<llvm::orc::KaleidoscopeJIT>();
+static std::map<std::string, std::unique_ptr<PrototypeAST>> functionPrototypes;
+
+static Type *dType = Type::getDoubleTy(mContext);
+static ExecutionEngine *engine;
