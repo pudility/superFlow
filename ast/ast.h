@@ -113,3 +113,10 @@ class ForAST: public AST {
   llvm::Value *codeGen() override;
 };
 
+class PrintAST: public AST {
+  std::vector<std::unique_ptr<AST>> arguments;
+
+  public:
+  PrintAST(std::vector<std::unique_ptr<AST>> arguments): arguments(std::move(arguments)) { }
+  llvm::Value *codeGen() override;
+};

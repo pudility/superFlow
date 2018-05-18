@@ -114,6 +114,8 @@ std::unique_ptr<AST> Parser::ParsePrimary () {
       return ParseParens();
     case Token::token_for:
       return ParseFor();
+    case Token::token_print:
+      return ParsePrint();
     case Token::token_eof:
       return nullptr; //TODO: handle this better
     default: 
@@ -260,4 +262,31 @@ std::unique_ptr<AST> Parser::ParseFor() {
   if (!body) return nullptr;
 
   return llvm::make_unique<ForAST> (idName, std::move(start), std::move(end), std::move(start), std::move(body));
+}
+
+std::unique_ptr<AST> Parser::ParsePrint() {
+  getNextToken(); // Move past `print`
+
+  if (currentToken != '(') return LogError("Expected `(` to call print");
+
+  std::vector<std::unique_ptr<AST>> arguments; 
+
+  getNextToken(); // Move past opening parenthesis
+  if (currentToken != ')') {
+    while (true) {
+      if (auto arg = ParseExpression())
+        arguments.push_back(std::move(arg));
+      else
+        return nullptr;
+
+      if (currentToken == ')') // we reached the end of args
+        break;
+
+      getNextToken();
+    }
+  } else return LogError("Print must have exactly one argument");
+  
+  getNextToken(); //Move past the closing parenthesis
+  
+  return llvm::make_unique<PrintAST>(std::move(arguments));
 }

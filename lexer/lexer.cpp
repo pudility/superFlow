@@ -37,8 +37,8 @@ int Lexer::getToken () {
       return token_array;
     if (identifier == "for")
       return token_for;
-    if (identifier == "in")
-      return token_in;
+    if (identifier == "print")
+      return token_print;
     return token_id;
   }
 

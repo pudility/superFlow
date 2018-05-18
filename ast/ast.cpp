@@ -186,3 +186,17 @@ Value *ForAST::codeGen() {
 
   return Constant::getNullValue(dType); // For loops always return 0.0
 }
+
+Value *PrintAST::codeGen() {
+	Constant *calleeFunc = mModule->getOrInsertFunction("printf", 
+    FunctionType::get(dType, 
+    	true /* this is var arg func type*/
+  	)
+	);
+
+	std::vector<Value *> argsV;
+	for (unsigned i = 0, e = arguments.size(); i != e; ++i)
+		argsV.push_back(arguments[i]->codeGen());
+
+	return mBuilder.CreateCall(calleeFunc, argsV, "printfCall");
+}

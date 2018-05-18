@@ -30,7 +30,7 @@ enum Token {
   token_variable = -6,
   token_array = -7,
   token_for = -8,
-  token_in = -9,
+  token_print = -9,
 };
 
 enum class VarType {
