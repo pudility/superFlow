@@ -59,15 +59,6 @@ static void handleArrayVar(Parser * &p) {
     std::cerr << "Error - failed to parse variable" << std::endl;
 }
 
-static void handlePrint(Parser * &p) {
-  if (auto fnAST = p->ParsePrint()) {
-    // std::cout << "Array Variable" << std::endl;
-    if (auto *fnIR = fnAST->codeGen())
-      fnIR->print(llvm::errs());
-  } else
-    std::cerr << "Error - failed to parse variable" << std::endl;
-}
-
 static int mainLoop(Parser * &p) {
   while (true) {
     switch(p->currentToken) { // TODO: all parsing should be caught and moved on from

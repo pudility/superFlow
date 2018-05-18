@@ -1,3 +1,5 @@
 extern printd(x);
 
-printd(10);
+for i = 10, i < 20, 5 (
+  printd(i)
+);
