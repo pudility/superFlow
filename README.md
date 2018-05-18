@@ -1,15 +1,13 @@
 Currently this projects is in *very early* stages.
 
 To run:
-```bash
-clang++ super.cpp ast/ast.cpp lexer/lexer.cpp parser/parser.cpp `llvm-config --cxxflags --ldflags --system-libs --libs core`
-```
 
-This will generate LLVM IR code which you can compile using `llvm-as` - for example:
+Modify tmpfile.spr then run
+
 ```bash
-./a.out &> out.ll && llvm-as out.ll
+./run.sh all
 ```
-*Note:* generated code is piped to `errs` so make sure you are using `&>` not `>`
+to build, compile, and run your code.
 
 ### Functions
 ---
