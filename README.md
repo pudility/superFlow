@@ -9,6 +9,18 @@ Modify tmpfile.spr then run
 ```
 to build, compile, and run your code.
 
+To only preform one of these actions, simply pass it only that argument:
+
+```bash
+./run.sh all # everything
+
+./run.sh build # build the compiler
+
+./run.sh compile # compile code in tmpfile.spr
+
+./run.sh run # run compiled code
+```
+
 ### Functions
 ---
 ```
