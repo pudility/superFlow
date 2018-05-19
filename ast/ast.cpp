@@ -21,8 +21,6 @@
 
 using namespace llvm;
 
-static Type *dType = Type::getDoubleTy(mContext);
-
 Value *NumberAST::codeGen() {
   return ConstantFP::get(mContext, APFloat(val));
 }
@@ -54,8 +52,19 @@ Value *ArrayAST::codeGen() {
 end:;
     i++;
   }
-
+  
   return fullVector;
+}
+
+Value *ArrayElementAST::codeGen() {
+  std::vector<Value *> emptyArgs; // We need to pass it this so we make an empty one
+  Value *vVector = mBuilder.CreateCall(mModule->getFunction(name), emptyArgs, "calltmp");
+  Constant *indexT = Constant::getIntegerValue(dType, llvm::APInt(32, index));
+
+  Instruction *newVector = ExtractElementInst::Create(vVector, indexT);
+
+  mBuilder.Insert(newVector);
+  return newVector;
 }
 
 Value *BinaryAST::codeGen() {

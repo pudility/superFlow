@@ -1,5 +1,5 @@
 extern printd(x);
 
-for i = 10, i < 20, 5 (
-  printd(i)
-);
+array x [1 2 3];
+
+printd(x[1]);

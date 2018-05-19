@@ -26,6 +26,7 @@ static IRBuilder<> mBuilder(mContext);
 static std::unique_ptr<Module> mModule = make_unique<Module>("Super", mContext);
 static std::map<std::string, Value *> namedValues;
 static Module *M = mModule.get();
+static Type *dType = Type::getDoubleTy(mContext);
 
 class AST {
   public:
@@ -43,10 +44,20 @@ class NumberAST: public AST {
 
 class ArrayAST: public AST {
   std::vector<std::unique_ptr<AST>> numbers;
+  std::string name;
 
   public:
-  ArrayAST(std::vector<std::unique_ptr<AST>> numbers): numbers(std::move(numbers)) { }
+  ArrayAST(std::vector<std::unique_ptr<AST>> numbers, std::string name): numbers(std::move(numbers)), name(name) { }
   llvm::Value *codeGen() override;
+};
+
+class ArrayElementAST: public AST {
+  std::string name;
+  double index;
+
+  public:
+  ArrayElementAST(std::string name, double index): name(name), index(index) { }
+  Value *codeGen() override;
 };
 
 class VariableAST: public AST {

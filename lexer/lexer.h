@@ -37,4 +37,3 @@ enum class VarType {
   type_double,
   type_array
 };
-

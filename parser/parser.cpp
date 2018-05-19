@@ -2,6 +2,7 @@
 #include "../ast/ast.h"
 #include "../lexer/lexer.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/Support/raw_ostream.h"
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
@@ -11,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include "llvm/IR/NoFolder.h"
 
 int Parser::getNextToken() {
   return currentToken = mLexer->getToken();
@@ -51,7 +53,7 @@ std::unique_ptr<AST> Parser::ParseParens() {
   return expression;
 }
 
-std::unique_ptr<AST> Parser::ParseArray() {
+std::unique_ptr<AST> Parser::ParseArray(std::string name) {
   getNextToken(); // Move past `[`
   std::vector<std::unique_ptr<AST>> numbers;
 
@@ -60,17 +62,28 @@ std::unique_ptr<AST> Parser::ParseArray() {
   
   getNextToken(); // Move over `]`
 
-  return llvm::make_unique<ArrayAST>(std::move(numbers));
+  return llvm::make_unique<ArrayAST>(std::move(numbers), name);
 }
 
 std::unique_ptr<AST> Parser::ParseIdentifier() {
   const std::string idName = mLexer->identifier;
   
   getNextToken(); // Move past the identifier
-  
-  std::vector<std::unique_ptr<AST>> arguments; // We need even an empty vector either way
 
+  std::vector<std::unique_ptr<AST>> arguments; // we declare this here even because we might need to use it as an empty
+  
   if (currentToken != '(') { // We are refrencing the var not function
+    if (currentToken == '[') { // We are getting an element of an array //TODO: move me to ast
+      getNextToken(); // Move past `[`
+
+      double valIndex = mLexer->value;
+      
+      getNextToken(); //  move past index      
+      getNextToken(); // move past `]`
+      
+      return llvm::make_unique<ArrayElementAST>(idName, valIndex);
+    }
+
     if (std::find(namedFunctions.begin(), namedFunctions.end(), idName) != namedFunctions.end()) 
 			return llvm::make_unique<CallAST>(idName, std::move(arguments)); // TODO: 
       /* this is a hack, but we will just return a function that returns the value instead of an *actual* llvm variable */
@@ -78,6 +91,7 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
 
     else return llvm::make_unique<VariableAST>(idName); // otherwise return a real variable
   }
+
   // This means that we are calling a function
   getNextToken(); // Move past opening parenthesis
   if (currentToken != ')') { // the function has arguments
@@ -102,14 +116,14 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
   return llvm::make_unique<CallAST>(idName, std::move(arguments));
 }
 
-std::unique_ptr<AST> Parser::ParsePrimary () {
+std::unique_ptr<AST> Parser::ParsePrimary (std::string name) {
   switch(currentToken) {
     case Token::token_id:
       return ParseIdentifier();
     case Token::token_number:
       return ParseNumber();
     case '[':
-      return ParseArray();
+      return ParseArray(name);
     case '(':
       return ParseParens();
     case Token::token_for:
@@ -131,8 +145,8 @@ int Parser::getTokenRank() {
   return tokenRank;
 }
 
-std::unique_ptr<AST> Parser::ParseExpression() {
-  auto LHS = ParsePrimary();
+std::unique_ptr<AST> Parser::ParseExpression(std::string name) {
+  auto LHS = ParsePrimary(name);
   if (!LHS) return nullptr;
    
   return ParseBinaryOporatorRHS(0, std::move(LHS));
@@ -177,8 +191,6 @@ std::unique_ptr<PrototypeAST> Parser::ParsePrototype() {
   }
 
   return llvm::make_unique<PrototypeAST>(funcName, std::move(argNames), VarType::type_double); //TODO: functions that can return any type
-
-
 }
 
 std::unique_ptr<FuncAST> Parser::ParseDefinition() {
@@ -218,7 +230,7 @@ std::unique_ptr<FuncAST> Parser::ParseVariable(VarType type) {
   std::vector<std::string> arguments;
   auto proto = llvm::make_unique<PrototypeAST>(idName, std::move(arguments), type);
   
-  if (auto expr = ParseExpression()) 
+  if (auto expr = ParseExpression(idName)) 
     return llvm::make_unique<FuncAST>(std::move(proto), std::move(expr));
 
   return nullptr;

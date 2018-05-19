@@ -33,16 +33,16 @@ class Parser {
     // Number Parsing
     std::unique_ptr<AST> ParseNumber();
     std::unique_ptr<AST> ParseParens();  
-    std::unique_ptr<AST> ParseArray();
+    std::unique_ptr<AST> ParseArray(std::string name);
 
     // Identification (funcs and vars)
     std::unique_ptr<AST> ParseIdentifier();
-    std::unique_ptr<AST> ParsePrimary(); // Desicion maker
+    std::unique_ptr<AST> ParsePrimary(std::string name = ""); // Desicion maker
     std::unique_ptr<FuncAST> ParseVariable(VarType type);
 
     // Binary Parsing eg (4+4)
     int getTokenRank();
-    std::unique_ptr<AST> ParseExpression();
+    std::unique_ptr<AST> ParseExpression(std::string name = "");
 
     // Binary opporators
     std::unique_ptr<AST> ParseBinaryOporatorRHS(int exprRank, std::unique_ptr<AST> LHS);
