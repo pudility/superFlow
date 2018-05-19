@@ -2,4 +2,6 @@ extern printd(x);
 
 array x [1 2 3];
 
-printd(x[1]);
+x[3] = 1;
+
+printd(x[0]);

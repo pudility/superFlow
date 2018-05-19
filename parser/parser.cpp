@@ -80,6 +80,9 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
       
       getNextToken(); //  move past index      
       getNextToken(); // move past `]`
+     
+      if (currentToken == '=') 
+				return llvm::make_unique<ArrayElementSetAST>(idName, valIndex, ParseNumber()); 
       
       return llvm::make_unique<ArrayElementAST>(idName, valIndex);
     }
@@ -208,7 +211,9 @@ std::unique_ptr<FuncAST> Parser::ParseDefinition() {
 // This is for parsign things that are not in functions eg `> 4+4`
 std::unique_ptr<FuncAST> Parser::ParseTopLevel () {
   if (auto expr = ParseExpression()) {
-    auto proto = llvm::make_unique<PrototypeAST>("__anon_expr" /* TODO: this should add a coutner so that there can be mutiple */, std::vector<std::string>(), VarType::type_double);
+    auto proto = llvm::make_unique<PrototypeAST>("__anon_expr" + std::to_string(annonCount) /* TODO: this should add a coutner so that there can be mutiple */, std::vector<std::string>(), VarType::type_double);
+    annonCount++;
+
     return llvm::make_unique<FuncAST>(std::move(proto), std::move(expr));
   }
   return nullptr;

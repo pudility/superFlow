@@ -17,6 +17,9 @@ class Parser {
     std::vector<std::string> namedFunctions;
 
   public:
+    // unimportant stuff:
+    int annonCount = 0;
+
     // Basics
     int currentToken;
     int getNextToken();

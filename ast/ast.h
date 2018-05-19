@@ -60,6 +60,17 @@ class ArrayElementAST: public AST {
   Value *codeGen() override;
 };
 
+class ArrayElementSetAST: public AST {
+  std::string name;
+  double index;
+  std::unique_ptr<AST> newVal;
+
+  public:
+  ArrayElementSetAST(std::string name, double index, std::unique_ptr<AST> newVal): 
+    name(name), index(index), newVal(std::move(newVal)) { }
+  Value *codeGen() override;
+};
+
 class VariableAST: public AST {
   std::string name;
 

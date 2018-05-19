@@ -96,12 +96,13 @@ int main() {
   p->getNextToken();
 
   mainLoop(p);
-  
-  const char *IRMain = 
-    "define i32 @main() { \n"
-      "call double @__anon_expr() \n"
-      "ret i32 0 \n"
-    "} \n";
+
+  std::string IRMain = "define i32 @main() { \n";
+
+  for (int i = 0; i < p->annonCount; i++) 
+    IRMain += std::string("call double @__anon_expr") + std::to_string(i) + "() \n";
+      
+  IRMain += std::string("ret i32 0 \n } \n");
 
   std::cout << IRMain << std::endl; // Make sure our program actually runs
 
