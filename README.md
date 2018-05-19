@@ -76,6 +76,15 @@ array a [1 2 3]
 ```
 elements are **not** seperated by semi colins.
 
+You can get and set elements in the array like this:
+```
+# Set element
+a[0] = 3
+
+# Get element
+printd(a[0]) #3
+```
+
 ### Opporators
 These are your choices for opporators:
 - `+`
