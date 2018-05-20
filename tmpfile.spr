@@ -1,17 +1,10 @@
 extern printd(num);
 
-array foo [31 2 3];
-
 func x(y) {
-  foo[0] = 1
-  printd(foo[0]);
-  printd(foo[1]);
-  printd(foo[2]);
+  4 + 4;
+  8 * 8;
+  printd(44);
+  y * 4;
 }
 
-x(10);
-
-foo[0] = 1
-printd(foo[0]);
-printd(foo[1]);
-printd(foo[2]);
+printd(x(10));

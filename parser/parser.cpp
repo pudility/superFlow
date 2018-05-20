@@ -149,7 +149,7 @@ int Parser::getTokenRank() {
 }
 
 std::unique_ptr<AST> Parser::ParseExpression(std::string name) {
-  if (currentToken == '}') return nullptr; // If we are closing a function we dont want to parse this
+  if (currentToken == '}' || currentToken == ';') return nullptr; // If we are closing a function we dont want to parse this
 
   auto LHS = ParsePrimary(name);
   if (!LHS) return nullptr;
