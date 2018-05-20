@@ -65,6 +65,9 @@ static int mainLoop(Parser * &p) {
       case ';': // ignore top-level semicolons.
         p->getNextToken();
         break;
+      case '}': // TODO: this is a hack that we should not have to do
+        p->getNextToken();
+        break;
       case Token::token_variable:
         handleVar(p);
         break;

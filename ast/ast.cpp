@@ -157,6 +157,48 @@ Function *FuncAST::codeGen() {
   return nullptr;
 }
 
+// Long Functions have multiple expressions in them
+Function *LongFuncAST::codeGen() {
+  Function *func = prototype->codeGen();
+  
+  if (!func) return nullptr;
+
+  if (!func->empty()) return (Function*) Parser::LogErrorV("Function cannot be redefined.");
+
+  BasicBlock *block = BasicBlock::Create(mContext, "entry", func);
+  mBuilder.SetInsertPoint(block);
+
+  namedValues.clear();
+  for (auto &arg: func->args()) 
+    namedValues[arg.getName()] = &arg;
+
+  Constant *exprConst;
+  for (auto &expr: body) {
+    Value *exprValue = expr->codeGen();
+    exprConst = dyn_cast<Constant>(exprValue);
+    mBuilder.Insert(exprConst);
+  }
+
+  if (exprConst) { // TODO: make a return for null value if this is null
+    mBuilder.CreateRet(exprConst); // TODO: This should not matter, but we might want to change this to exprValue
+
+    llvm::verifyFunction(*func);
+
+    return func;
+  } else {
+    mBuilder.CreateRet(Constant::getNullValue(dType));
+
+    llvm::verifyFunction(*func);
+
+    return func;
+  }
+
+  std::cerr << "Could not create function - null value" << std::endl;
+  func->removeFromParent(); // If there is an error get rid of the function
+  return nullptr;
+}
+
+
 Value *ForAST::codeGen() {
   Value *startV = start->codeGen();
   if (!startV) return nullptr;

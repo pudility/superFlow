@@ -149,9 +149,11 @@ int Parser::getTokenRank() {
 }
 
 std::unique_ptr<AST> Parser::ParseExpression(std::string name) {
+  if (currentToken == '}') return nullptr; // If we are closing a function we dont want to parse this
+
   auto LHS = ParsePrimary(name);
   if (!LHS) return nullptr;
-   
+     
   return ParseBinaryOporatorRHS(0, std::move(LHS));
 }
 
@@ -196,15 +198,31 @@ std::unique_ptr<PrototypeAST> Parser::ParsePrototype() {
   return llvm::make_unique<PrototypeAST>(funcName, std::move(argNames), VarType::type_double); //TODO: functions that can return any type
 }
 
-std::unique_ptr<FuncAST> Parser::ParseDefinition() {
+std::unique_ptr<LongFuncAST> Parser::ParseDefinition() {
   getNextToken(); // Move over `func`
   auto proto = ParsePrototype();
   
   if (!proto) return nullptr;
+ 
+  std::vector<std::unique_ptr<AST>> expresssions;
+
+  if (currentToken == '{') { // Multiline func
+    getNextToken(); // Move past `{`
+
+    while (currentToken != '}') {
+      if (auto expr = ParsePrimary())
+        expresssions.push_back(std::move(expr));
+      getNextToken();
+    }
+
+    return llvm::make_unique<LongFuncAST>(std::move(proto), std::move(expresssions));
+  }
   
-  if (auto expr = ParseExpression()) 
-    return llvm::make_unique<FuncAST>(std::move(proto), std::move(expr));
-  
+  if (auto expr = ParseExpression()) {
+    expresssions.push_back(std::move(expr));
+    return llvm::make_unique<LongFuncAST>(std::move(proto), std::move(expresssions));
+  }
+
   return nullptr;
 }
 

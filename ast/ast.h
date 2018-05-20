@@ -121,6 +121,16 @@ class FuncAST {
   llvm::Function *codeGen();
 };
 
+class LongFuncAST {
+  std::unique_ptr<PrototypeAST> prototype;
+  std::vector<std::unique_ptr<AST>> body;
+
+  public:
+  LongFuncAST(std::unique_ptr<PrototypeAST> prototype, std::vector<std::unique_ptr<AST>> body): 
+    prototype(std::move(prototype)), body(std::move(body)) { }
+  llvm::Function *codeGen();
+};
+
 class ForAST: public AST {
   std::string varName;
   std::unique_ptr<AST> start, end, step, body;
