@@ -107,7 +107,7 @@ int main() {
       
   IRMain += std::string("ret i32 0 \n } \n");
 
-  std::cout << IRMain << std::endl; // Make sure our program actually runs
+  std::cout << std::endl << IRMain << std::endl; // Make sure our program actually runs
 
   delete p;
   return 0;

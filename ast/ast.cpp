@@ -18,6 +18,7 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/GlobalVariable.h"
 
 using namespace llvm;
 
@@ -52,8 +53,22 @@ Value *ArrayAST::codeGen() {
 end:;
     i++;
   }
+ 
+  /* GlobalVariable *vectorVar = new GlobalVariable(
+    // mModule, 
+    vectorType, 
+    false, 
+    GlobalValue::CommonLinkage, 
+    dyn_cast<Constant>(fullVector), 
+    name
+  ); */
+  // mBuilder.Insert(vectorVar);
   
-  return fullVector;
+  Value* alloc = new AllocaInst(vectorType, name);
+  StoreInst *vectorVar = new StoreInst(fullVector, alloc, false);
+
+  mBuilder.Insert(StoreInst);
+  return vectorVar;
 }
 
 Value *ArrayElementAST::codeGen() {
@@ -149,7 +164,7 @@ Function *FuncAST::codeGen() {
     mBuilder.CreateRet(returnValue);
 
     llvm::verifyFunction(*func);
-
+    
     return func;
   }
 

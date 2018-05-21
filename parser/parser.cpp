@@ -242,21 +242,25 @@ std::unique_ptr<PrototypeAST> Parser::ParseExtern() {
   return ParsePrototype();
 }
 
-std::unique_ptr<FuncAST> Parser::ParseVariable(VarType type) {
+std::unique_ptr<AST> Parser::ParseVariable(VarType type) {
   getNextToken(); // Move over `var`
 
   const std::string idName = mLexer->identifier;
-	namedFunctions.push_back(idName); // make sure we know about it when we are deciding whats a function and whats a variable
-  
-  getNextToken();
-  
-  std::vector<std::string> arguments;
-  auto proto = llvm::make_unique<PrototypeAST>(idName, std::move(arguments), type);
-  
-  if (auto expr = ParseExpression(idName)) 
-    return llvm::make_unique<FuncAST>(std::move(proto), std::move(expr));
 
+  if (type == VarType::type_array) return ParseArray(idName);
   return nullptr;
+
+//	namedFunctions.push_back(idName); // make sure we know about it when we are deciding whats a function and whats a variable
+//  
+//  getNextToken();
+//  
+//  std::vector<std::string> arguments;
+//  auto proto = llvm::make_unique<PrototypeAST>(idName, std::move(arguments), type);
+//  
+//  if (auto expr = ParseExpression(idName)) 
+//    return llvm::make_unique<FuncAST>(std::move(proto), std::move(expr));
+//
+//  return nullptr;
 }
 
 //'for' identifier '=' expr ',' expr (',' expr)? 'in' expression
