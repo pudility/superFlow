@@ -68,9 +68,9 @@ static int mainLoop(Parser * &p) {
       case '}': // TODO: this is a hack that we should not have to do
         p->getNextToken();
         break;
-      case Token::token_variable:
-        handleVar(p);
-        break;
+//      case Token::token_variable:
+//        handleVar(p);
+//        break;
       case Token::token_eof:
         return -1;
       case Token::token_func:
@@ -86,6 +86,8 @@ static int mainLoop(Parser * &p) {
         handleTopLevel(p);
         break;
     }
+
+    std::cout << std::endl;
   }
 }
 
@@ -102,9 +104,8 @@ int main() {
 
   std::string IRMain = "define i32 @main() { \n";
 
-  for (int i = 0; i < p->annonCount; i++) 
-    IRMain += std::string("call double @__anon_expr") + std::to_string(i) + "() \n";
-      
+  for (int i = 0; i < p->annonCount; i++)
+    IRMain += std::string("call double @__anon_expr") + std::to_string(i) + " () \n";
   IRMain += std::string("ret i32 0 \n } \n");
 
   std::cout << IRMain << std::endl; // Make sure our program actually runs

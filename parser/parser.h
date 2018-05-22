@@ -41,7 +41,7 @@ class Parser {
     // Identification (funcs and vars)
     std::unique_ptr<AST> ParseIdentifier();
     std::unique_ptr<AST> ParsePrimary(std::string name = ""); // Desicion maker
-    std::unique_ptr<FuncAST> ParseVariable(VarType type);
+    std::unique_ptr<AST> ParseVariable(VarType type);
 
     // Binary Parsing eg (4+4)
     int getTokenRank();
@@ -53,7 +53,7 @@ class Parser {
     // Other Things
     std::unique_ptr<PrototypeAST> ParsePrototype();
     std::unique_ptr<LongFuncAST> ParseDefinition();
-    std::unique_ptr<FuncAST> ParseTopLevel();
+    std::unique_ptr<LongFuncAST> ParseTopLevel();
     std::unique_ptr<PrototypeAST> ParseExtern();
     std::unique_ptr<AST> ParseFor();
     std::unique_ptr<AST> ParsePrint();
