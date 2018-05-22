@@ -80,7 +80,9 @@ end:;
 
 Value *ArrayElementAST::codeGen() {
   std::vector<Value *> emptyArgs; // We need to pass it this so we make an empty one
-  Value *refVector = mBuilder.CreateCall(mModule->getFunction(name), emptyArgs, "calltmp");
+  Function *func = mBuilder.GetInsertBlock()->getParent();
+  AllocaInst *alloca = namedValues[name];
+  Value *refVector = mBuilder.CreateLoad(alloca, name.c_str()); 
   Constant *indexT = Constant::getIntegerValue(dType, llvm::APInt(32, index));
 
   Instruction *newVector = ExtractElementInst::Create(refVector, indexT);
@@ -91,13 +93,15 @@ Value *ArrayElementAST::codeGen() {
 
 Value *ArrayElementSetAST::codeGen() {
   std::vector<Value *> emptyArgs; // We need to pass it this so we make an empty one
-  Value *refVector = mBuilder.CreateCall(mModule->getFunction(name), emptyArgs, "calltmp");
+  Function *func = mBuilder.GetInsertBlock()->getParent();
+  AllocaInst *alloca = namedValues[name];
+  Value *refVector = mBuilder.CreateLoad(alloca, name.c_str()); 
   Constant *indexT = Constant::getIntegerValue(dType, llvm::APInt(32, index));
 
   Instruction *newVector = InsertElementInst::Create(refVector, newVal->codeGen(), indexT);
 
   mBuilder.Insert(newVector);
-  return Constant::getNullValue(dType);
+  return Constant::getNullValue(vType);
 }
 
 Value *BinaryAST::codeGen() {

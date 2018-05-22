@@ -1,7 +1,5 @@
 extern printd(x);
 
-var foo 3;
+array a [1 2 3];
 
-array bar [1 2 3];
-
-for i = 0, i < 10 printd(foo + i)
+printd(a[1])
