@@ -83,9 +83,9 @@ static int mainLoop(Parser * &p) {
       case Token::token_extern:
         handleExtern(p);
         break;
-      case Token::token_array:
-        handleArrayVar(p);
-        break;
+//      case Token::token_array:
+//        handleArrayVar(p);
+//        break;
       default:
         handleTopLevel(p);
         break;

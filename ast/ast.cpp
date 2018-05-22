@@ -21,11 +21,6 @@
 
 using namespace llvm;
 
-AllocaInst *entryCreateBlockAlloca(Function *func, std::string name) {
-  IRBuilder<> tmpBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
-  return tmpBuilder.CreateAlloca(dType, nullptr, name);
-}
-
 Value *NumberAST::codeGen() {
   return ConstantFP::get(mContext, APFloat(val));
 }
@@ -48,18 +43,17 @@ Value *VarAST::codeGen() {
   if (init) {
     initVal = init->codeGen();
     if (!initVal) return nullptr;
-  } else initVal = Constant::getNullValue(dType);
+  } else {
+    initVal = (type == VarType::type_double) ? Constant::getNullValue(dType) : Constant::getNullValue(vType);
+  }
 
-  AllocaInst *alloca = entryCreateBlockAlloca(func, name);
+  AllocaInst *alloca = (type == VarType::type_double) ? 
+    entryCreateBlockAlloca(func, name) : entryCreateBlockAllocaArray(func, name);
   namedValues[name] = alloca;
 
   return mBuilder.CreateStore(initVal, alloca);
 }
 
-// Value *GlobalVarAST::codeGen() {
-// 
-// }
-// 
 Value *ArrayAST::codeGen() {
   Type *dType = Type::getDoubleTy(mContext);
   Type *vectorType = VectorType::get(dType, 4);
@@ -246,28 +240,28 @@ Function *LongFuncAST::codeGen() {
   return nullptr;
 }
 
-Function *AnnonFuncAST::codeGen() {
-  Function *func = prototype->codeGen();
-  
-  if (!func) return nullptr;
-
-  if (!func->empty()) return (Function*) Parser::LogErrorV("Function cannot be redefined.");
-
-  if (!annonBlock) annonBlock = BasicBlock::Create(mContext, "entry", func);
-  mBuilder.SetInsertPoint(annonBlock);
-
-  Constant *exprConst;
-  for (auto &expr: body) {
-    Value *exprValue = expr->codeGen();
-    exprConst = dyn_cast<Constant>(exprValue);
-    mBuilder.Insert(exprConst);
-  }
-
-  mBuilder.CreateRet(Constant::getNullValue(dType));
-  llvm::verifyFunction(*func);
-
-  return func;
-}
+// Function *AnnonFuncAST::codeGen() {
+//   Function *func = prototype->codeGen();
+//   
+//   if (!func) return nullptr;
+// 
+//   if (!func->empty()) return (Function*) Parser::LogErrorV("Function cannot be redefined.");
+// 
+//   if (!annonBlock) annonBlock = BasicBlock::Create(mContext, "entry", func);
+//   mBuilder.SetInsertPoint(annonBlock);
+// 
+//   Constant *exprConst;
+//   for (auto &expr: body) {
+//     Value *exprValue = expr->codeGen();
+//     exprConst = dyn_cast<Constant>(exprValue);
+//     mBuilder.Insert(exprConst);
+//   }
+// 
+//   mBuilder.CreateRet(Constant::getNullValue(dType));
+//   llvm::verifyFunction(*func);
+// 
+//   return func;
+// }
 
 Value *ForAST::codeGen() {
   Function *func = mBuilder.GetInsertBlock()->getParent();

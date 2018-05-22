@@ -134,6 +134,8 @@ std::unique_ptr<AST> Parser::ParsePrimary (std::string name) {
       return ParseFor();
     case Token::token_variable:
       return ParseVariable(VarType::type_double);
+    case Token::token_array:
+      return ParseVariable(VarType::type_array);
     case Token::token_eof:
       return nullptr; //TODO: handle this better
     default: 
@@ -253,19 +255,14 @@ std::unique_ptr<AST> Parser::ParseVariable(VarType type) {
   getNextToken(); // Move over `var`
 
   const std::string idName = mLexer->identifier;
-	// namedFunctions.push_back(idName); // make sure we know about it when we are deciding whats a function and whats a variable
   
   getNextToken();
   
-//  std::vector<std::string> arguments;
-//  auto proto = llvm::make_unique<PrototypeAST>(idName, std::move(arguments), type);
-//  
   if (auto expr = ParseExpression(idName)) 
     return llvm::make_unique<VarAST>(
-      std::pair<std::string, std::unique_ptr<AST>>(idName, std::move(expr))
+      std::pair<std::string, std::unique_ptr<AST>>(idName, std::move(expr)),
+      type
     );
-//    return llvm::make_unique<FuncAST>(std::move(proto), std::move(expr));
-
 
   return nullptr;
 }
