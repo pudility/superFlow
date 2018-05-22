@@ -1,3 +1,5 @@
 extern printd(x);
 
-printd(10);
+var i 3;
+
+printd(i);

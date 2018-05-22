@@ -228,20 +228,20 @@ std::unique_ptr<LongFuncAST> Parser::ParseDefinition() {
 }
 
 // This is for parsign things that are not in functions eg `> 4+4`
-std::unique_ptr<LongFuncAST> Parser::ParseTopLevel () {
-  if (auto expr = ParseExpression()) {
-    auto proto = llvm::make_unique<PrototypeAST>(
-      "__anon_expr" + std::to_string(annonCount), 
-      std::vector<std::string>(), 
-      VarType::type_double
-    );
-    annonCount++;
-    std::vector<std::unique_ptr<AST>> exprs;
-    exprs.push_back(std::move(expr));
+void Parser::ParseTopLevel () {
+  if (auto expr = ParseExpression()) 
+    annonExprs.push_back(std::move(expr));
+}
 
-    return llvm::make_unique<LongFuncAST>(std::move(proto), std::move(exprs)); // we use long func so we can return null
-  }
-  return nullptr;
+std::unique_ptr<LongFuncAST> Parser::LoadAnnonFuncs () {
+  auto proto = llvm::make_unique<PrototypeAST>(
+    "__anon_expr" + std::to_string(annonCount), 
+    std::vector<std::string>(), 
+    VarType::type_double
+  );
+  annonCount++;
+
+  return llvm::make_unique<LongFuncAST>(std::move(proto), std::move(annonExprs)); // we use long func so we can return null
 }
 
 std::unique_ptr<PrototypeAST> Parser::ParseExtern() {

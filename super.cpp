@@ -23,13 +23,17 @@ static void handleFunc(Parser * &p) {
     std::cerr << "Error - failed to parse definition" << std::endl;
 }
 
-static void handleTopLevel(Parser * &p) {
-  if (auto fnAST = p->ParseTopLevel()) {
+static void loadTopLevel(Parser * &p) {
+  if (auto fnAST = p->LoadAnnonFuncs()) {
     // std::cout << "Top Level" << std::endl;
     if (auto *fnIR = fnAST->codeGen()) //TODO: clean up printing
 			fnIR->print(llvm::errs());
   } else
     std::cerr << "Error - failed to parse top level" << std::endl;
+}
+
+static void handleTopLevel(Parser * &p) {
+  p->ParseTopLevel();
 }
 
 static void handleExtern(Parser * &p) {
@@ -101,6 +105,8 @@ int main() {
   p->getNextToken();
 
   mainLoop(p);
+
+  loadTopLevel(p);
 
   std::string IRMain = "define i32 @main() { \n";
 
