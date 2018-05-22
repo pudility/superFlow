@@ -57,13 +57,20 @@ std::unique_ptr<AST> Parser::ParseParens() {
 std::unique_ptr<AST> Parser::ParseArray(std::string name) {
   getNextToken(); // Move past `[`
   std::vector<std::unique_ptr<AST>> numbers;
-
+  int depth = 1; // 1 because we already have moved past one `[`
+  
+  while (currentToken == '[') { // nested arrays
+    depth++;
+    getNextToken(); // Move past `[`
+  }
+  
   while (currentToken != ']')
     numbers.push_back(ParseNumber());
-  
-  getNextToken(); // Move over `]`
 
-  return llvm::make_unique<ArrayAST>(std::move(numbers), name);
+  for (int i = 0; i < depth; i++)
+    getNextToken(); // Move over `]`
+
+  return llvm::make_unique<ArrayAST>(std::move(numbers), name, depth);
 }
 
 std::unique_ptr<AST> Parser::ParseIdentifier() {

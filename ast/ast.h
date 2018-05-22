@@ -29,14 +29,24 @@ static Module *M = mModule.get();
 static Type *dType = Type::getDoubleTy(mContext);
 static Type *vType = VectorType::get(dType, 4);
 
+static Type *vectorTypeForDepth(int depth) {
+  Type *type = VectorType::get(dType, 4);
+  for (int i = 0; i < depth; i++)
+    type = VectorType::get(type, 4);
+
+  return type;
+}
+
 static AllocaInst *entryCreateBlockAlloca(Function *func, std::string name) {
   IRBuilder<> tmpBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
   return tmpBuilder.CreateAlloca(dType, nullptr, name);
 }
 
-static AllocaInst *entryCreateBlockAllocaArray(Function *func, std::string name) {
+static AllocaInst *entryCreateBlockAllocaArray(
+  Function *func, std::string name, Type *type = vType
+) {
   IRBuilder<> tmpBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
-  return tmpBuilder.CreateAlloca(vType, nullptr, name);
+  return tmpBuilder.CreateAlloca(type, nullptr, name);
 }
 
 class AST {
@@ -56,18 +66,22 @@ class NumberAST: public AST {
 class ArrayAST: public AST {
   std::vector<std::unique_ptr<AST>> numbers;
   std::string name;
+  int depth;
 
   public:
-  ArrayAST(std::vector<std::unique_ptr<AST>> numbers, std::string name): numbers(std::move(numbers)), name(name) { }
+  ArrayAST(std::vector<std::unique_ptr<AST>> numbers, std::string name, int depth = 0): 
+    numbers(std::move(numbers)), name(name), depth(depth) { }
   llvm::Value *codeGen() override;
 };
 
 class ArrayElementAST: public AST {
   std::string name;
   double index;
+  int depth;
 
   public:
-  ArrayElementAST(std::string name, double index): name(name), index(index) { }
+  ArrayElementAST(std::string name, double index, int depth = 0): 
+    name(name), index(index), depth(depth) { }
   Value *codeGen() override;
 };
 
@@ -75,10 +89,11 @@ class ArrayElementSetAST: public AST {
   std::string name;
   double index;
   std::unique_ptr<AST> newVal;
+  int depth;
 
   public:
-  ArrayElementSetAST(std::string name, double index, std::unique_ptr<AST> newVal): 
-    name(name), index(index), newVal(std::move(newVal)) { }
+  ArrayElementSetAST(std::string name, double index, std::unique_ptr<AST> newVal, int depth = 0): 
+    name(name), index(index), newVal(std::move(newVal)), depth(depth) { }
   Value *codeGen() override;
 };
 
@@ -93,10 +108,11 @@ class VariableAST: public AST {
 class VarAST: public AST {
   std::pair<std::string, std::unique_ptr<AST>> var;
   VarType type;
+  int depth;
 
   public:
-  VarAST(std::pair<std::string, std::unique_ptr<AST>> var, VarType type): 
-    var(std::move(var)), type(type) { }
+  VarAST(std::pair<std::string, std::unique_ptr<AST>> var, VarType type, int depth = 0): 
+    var(std::move(var)), type(type), depth(depth) { }
   Value *codeGen() override;
 };
 

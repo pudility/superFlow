@@ -47,21 +47,37 @@ Value *VarAST::codeGen() {
     initVal = (type == VarType::type_double) ? Constant::getNullValue(dType) : Constant::getNullValue(vType);
   }
 
-  AllocaInst *alloca = (type == VarType::type_double) ? 
-    entryCreateBlockAlloca(func, name) : entryCreateBlockAllocaArray(func, name);
+  AllocaInst *alloca;
+  if (type == VarType::type_double) {
+    alloca = entryCreateBlockAlloca(func, name);
+  } else {
+    alloca = entryCreateBlockAllocaArray(func, name);
+  }
   namedValues[name] = alloca;
 
   return mBuilder.CreateStore(initVal, alloca);
 }
 
 Value *ArrayAST::codeGen() {
-  Type *dType = Type::getDoubleTy(mContext);
-  Type *vectorType = VectorType::get(dType, 4);
+  Type *vectorType = vectorTypeForDepth(depth);
   Value *emptyVector = UndefValue::get(vectorType);
   Constant *indexT = Constant::getIntegerValue(dType, llvm::APInt(32, 0));
-  
+	 
+  // Initialize all arrays
+	Instruction *initVector;
+	int tmpDepth = depth;
+  for (int i = 0; i < depth; i ++) {
+    tmpDepth--;
+    initVector = InsertElementInst::Create(emptyVector, emptyVector, indexT);
+		mBuilder.Insert(initVector);
+    vectorType = vectorTypeForDepth(tmpDepth);
+    emptyVector = UndefValue::get(vectorType);
+    initVector = ExtractElementInst::Create(emptyVector, indexT);
+		mBuilder.Insert(initVector);
+  }
+
   std::vector<Value *> numberValues;
-  Instruction *fullVector = InsertElementInst::Create(emptyVector, numbers[0]->codeGen(), indexT);
+  Instruction *fullVector = InsertElementInst::Create(initVector, numbers[0]->codeGen(), indexT);
   mBuilder.Insert(fullVector);
 
   int i = 0;
