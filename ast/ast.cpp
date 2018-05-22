@@ -29,7 +29,29 @@ Value *VariableAST::codeGen() {
   Value *v = namedValues[name];
   if (!v) Parser::LogErrorV("Unknown Variable Name");
 
-  return v; // Its okay to rutun v even if it is a nullptr - that will just bubble up the error
+  return mBuilder.CreateLoad(v, name.c_str()); // Its okay to rutun v even if it is a nullptr - that will just bubble up the error
+}
+
+Value *VarAST::codeGen() {
+  Function *func = mBuilder.GetInsertBlock()->getParent();
+  
+  std::string name = var.first;
+  
+  AST *init = var.second.get();
+
+  Value *initVal;
+  if (init) {
+    initVal = init->codeGen();
+    if (!initVal) return nullptr;
+  } else {
+    initVal = (type == VarType::type_double) ? Constant::getNullValue(dType) : Constant::getNullValue(vType);
+  }
+
+  AllocaInst *alloca = (type == VarType::type_double) ? 
+    entryCreateBlockAlloca(func, name) : entryCreateBlockAllocaArray(func, name);
+  namedValues[name] = alloca;
+
+  return mBuilder.CreateStore(initVal, alloca);
 }
 
 Value *ArrayAST::codeGen() {
@@ -58,7 +80,9 @@ end:;
 
 Value *ArrayElementAST::codeGen() {
   std::vector<Value *> emptyArgs; // We need to pass it this so we make an empty one
-  Value *refVector = mBuilder.CreateCall(mModule->getFunction(name), emptyArgs, "calltmp");
+  Function *func = mBuilder.GetInsertBlock()->getParent();
+  AllocaInst *alloca = namedValues[name];
+  Value *refVector = mBuilder.CreateLoad(alloca, name.c_str()); 
   Constant *indexT = Constant::getIntegerValue(dType, llvm::APInt(32, index));
 
   Instruction *newVector = ExtractElementInst::Create(refVector, indexT);
@@ -69,13 +93,16 @@ Value *ArrayElementAST::codeGen() {
 
 Value *ArrayElementSetAST::codeGen() {
   std::vector<Value *> emptyArgs; // We need to pass it this so we make an empty one
-  Value *refVector = mBuilder.CreateCall(mModule->getFunction(name), emptyArgs, "calltmp");
+  Function *func = mBuilder.GetInsertBlock()->getParent();
+  AllocaInst *alloca = namedValues[name];
+  Value *refVector = mBuilder.CreateLoad(alloca, name.c_str()); 
   Constant *indexT = Constant::getIntegerValue(dType, llvm::APInt(32, index));
 
   Instruction *newVector = InsertElementInst::Create(refVector, newVal->codeGen(), indexT);
-
   mBuilder.Insert(newVector);
-  return Constant::getNullValue(dType);
+  mBuilder.CreateStore(newVector, alloca);
+
+  return Constant::getNullValue(vType);
 }
 
 Value *BinaryAST::codeGen() {
@@ -129,6 +156,18 @@ Function *PrototypeAST::codeGen() {
   return f;
 }
 
+void PrototypeAST::createArgumentAllocas(Function *func) {
+  Function::arg_iterator argItr = func->arg_begin();
+  for (unsigned index = 0, end = arguments.size(); index != end; ++index, ++argItr) {
+    AllocaInst *alloca = entryCreateBlockAlloca(func, arguments[index]);
+
+    mBuilder.CreateStore(argItr, alloca);
+
+    namedValues[arguments[index]] = alloca;
+  }
+}
+
+
 Function *FuncAST::codeGen() {
   Function *func = mModule->getFunction(prototype->getName()); // this checks if it already exists as part of llvm
   
@@ -141,9 +180,13 @@ Function *FuncAST::codeGen() {
   BasicBlock *block = BasicBlock::Create(mContext, "entry", func);
   mBuilder.SetInsertPoint(block);
 
-  namedValues.clear();
-  for (auto &arg: func->args()) 
-    namedValues[arg.getName()] = &arg;
+  for (auto &arg: func->args()) {
+    AllocaInst *alloca = entryCreateBlockAlloca(func, arg.getName());
+
+    mBuilder.CreateStore(&arg, alloca);
+
+    namedValues[arg.getName()] = alloca;
+  }
 
   if (Value *returnValue = body->codeGen()) {
     mBuilder.CreateRet(returnValue);
@@ -168,9 +211,13 @@ Function *LongFuncAST::codeGen() {
   BasicBlock *block = BasicBlock::Create(mContext, "entry", func);
   mBuilder.SetInsertPoint(block);
 
-  namedValues.clear();
-  for (auto &arg: func->args()) 
-    namedValues[arg.getName()] = &arg;
+  for (auto &arg: func->args()) {
+    AllocaInst *alloca = entryCreateBlockAlloca(func, arg.getName());
+
+    mBuilder.CreateStore(&arg, alloca);
+
+    namedValues[arg.getName()] = alloca;
+  }
 
   Constant *exprConst;
   for (auto &expr: body) {
@@ -198,23 +245,50 @@ Function *LongFuncAST::codeGen() {
   return nullptr;
 }
 
+// Function *AnnonFuncAST::codeGen() {
+//   Function *func = prototype->codeGen();
+//   
+//   if (!func) return nullptr;
+// 
+//   if (!func->empty()) return (Function*) Parser::LogErrorV("Function cannot be redefined.");
+// 
+//   if (!annonBlock) annonBlock = BasicBlock::Create(mContext, "entry", func);
+//   mBuilder.SetInsertPoint(annonBlock);
+// 
+//   Constant *exprConst;
+//   for (auto &expr: body) {
+//     Value *exprValue = expr->codeGen();
+//     exprConst = dyn_cast<Constant>(exprValue);
+//     mBuilder.Insert(exprConst);
+//   }
+// 
+//   mBuilder.CreateRet(Constant::getNullValue(dType));
+//   llvm::verifyFunction(*func);
+// 
+//   return func;
+// }
 
 Value *ForAST::codeGen() {
+  Function *func = mBuilder.GetInsertBlock()->getParent();
+
+  AllocaInst *alloca = entryCreateBlockAlloca(func, varName);
+
   Value *startV = start->codeGen();
   if (!startV) return nullptr;
 
-  Function *func = mBuilder.GetInsertBlock()->getParent();
-  BasicBlock *preHeaderBlock = mBuilder.GetInsertBlock();
+  mBuilder.CreateStore(startV, alloca);
+
+//  BasicBlock *preHeaderBlock = mBuilder.GetInsertBlock();
   BasicBlock *loopBlock = BasicBlock::Create(mContext, "loop", func);
 
   mBuilder.CreateBr(loopBlock);
   mBuilder.SetInsertPoint(loopBlock);
 
-  PHINode *var = mBuilder.CreatePHI(dType, 2, varName);
-  var->addIncoming(startV, preHeaderBlock);
+//  PHINode *var = mBuilder.CreatePHI(dType, 2, varName);
+//  var->addIncoming(startV, preHeaderBlock);
 
-  Value *oldVal = namedValues[varName];
-  namedValues[varName] = var;
+  AllocaInst *oldVal = namedValues[varName];
+  namedValues[varName] = alloca;
 
   if (!body->codeGen())
     return nullptr;
@@ -227,7 +301,10 @@ Value *ForAST::codeGen() {
     stepVal = ConstantFP::get(mContext, APFloat(1.0)); // If nothing was specified then just add 1.0
   }
 
-  Value *nextVar = mBuilder.CreateFAdd(var, stepVal, "nextvar");
+  Value *currentVar = mBuilder.CreateLoad(alloca, varName.c_str());
+  Value *nextVar = mBuilder.CreateFAdd(currentVar, stepVal, "nextvar");
+  mBuilder.CreateStore(nextVar, alloca);
+
   Value *endCondition = end->codeGen();
   if (!endCondition) return nullptr;
 
@@ -239,7 +316,7 @@ Value *ForAST::codeGen() {
   mBuilder.CreateCondBr(endCondition, loopBlock, afterBlock);
 
   mBuilder.SetInsertPoint(afterBlock);
-  var->addIncoming(nextVar, loopEndBlock);
+//  var->addIncoming(nextVar, loopEndBlock);
 
   if (oldVal)
     namedValues[varName] = oldVal;

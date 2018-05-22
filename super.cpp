@@ -23,13 +23,17 @@ static void handleFunc(Parser * &p) {
     std::cerr << "Error - failed to parse definition" << std::endl;
 }
 
-static void handleTopLevel(Parser * &p) {
-  if (auto fnAST = p->ParseTopLevel()) {
+static void loadTopLevel(Parser * &p) {
+  if (auto fnAST = p->LoadAnnonFuncs()) {
     // std::cout << "Top Level" << std::endl;
     if (auto *fnIR = fnAST->codeGen()) //TODO: clean up printing
 			fnIR->print(llvm::errs());
   } else
     std::cerr << "Error - failed to parse top level" << std::endl;
+}
+
+static void handleTopLevel(Parser * &p) {
+  p->ParseTopLevel();
 }
 
 static void handleExtern(Parser * &p) {
@@ -68,9 +72,9 @@ static int mainLoop(Parser * &p) {
       case '}': // TODO: this is a hack that we should not have to do
         p->getNextToken();
         break;
-      case Token::token_variable:
-        handleVar(p);
-        break;
+//      case Token::token_variable:
+//        handleVar(p);
+//        break;
       case Token::token_eof:
         return -1;
       case Token::token_func:
@@ -79,13 +83,15 @@ static int mainLoop(Parser * &p) {
       case Token::token_extern:
         handleExtern(p);
         break;
-      case Token::token_array:
-        handleArrayVar(p);
-        break;
+//      case Token::token_array:
+//        handleArrayVar(p);
+//        break;
       default:
         handleTopLevel(p);
         break;
     }
+
+    std::cout << std::endl;
   }
 }
 
@@ -100,11 +106,12 @@ int main() {
 
   mainLoop(p);
 
+  loadTopLevel(p);
+
   std::string IRMain = "define i32 @main() { \n";
 
-  for (int i = 0; i < p->annonCount; i++) 
-    IRMain += std::string("call double @__anon_expr") + std::to_string(i) + "() \n";
-      
+  for (int i = 0; i < p->annonCount; i++)
+    IRMain += std::string("call double @__anon_expr") + std::to_string(i) + " () \n";
   IRMain += std::string("ret i32 0 \n } \n");
 
   std::cout << IRMain << std::endl; // Make sure our program actually runs

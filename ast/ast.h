@@ -24,9 +24,20 @@ using namespace llvm;
 static LLVMContext mContext;
 static IRBuilder<> mBuilder(mContext);
 static std::unique_ptr<Module> mModule = make_unique<Module>("Super", mContext);
-static std::map<std::string, Value *> namedValues;
+static std::map<std::string, AllocaInst *> namedValues;
 static Module *M = mModule.get();
 static Type *dType = Type::getDoubleTy(mContext);
+static Type *vType = VectorType::get(dType, 4);
+
+static AllocaInst *entryCreateBlockAlloca(Function *func, std::string name) {
+  IRBuilder<> tmpBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
+  return tmpBuilder.CreateAlloca(dType, nullptr, name);
+}
+
+static AllocaInst *entryCreateBlockAllocaArray(Function *func, std::string name) {
+  IRBuilder<> tmpBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
+  return tmpBuilder.CreateAlloca(vType, nullptr, name);
+}
 
 class AST {
   public:
@@ -79,6 +90,16 @@ class VariableAST: public AST {
   llvm::Value *codeGen() override;
 };
 
+class VarAST: public AST {
+  std::pair<std::string, std::unique_ptr<AST>> var;
+  VarType type;
+
+  public:
+  VarAST(std::pair<std::string, std::unique_ptr<AST>> var, VarType type): 
+    var(std::move(var)), type(type) { }
+  Value *codeGen() override;
+};
+
 class BinaryAST: public AST {
   char option;
   std::unique_ptr<AST> LHS, RHS;
@@ -109,6 +130,7 @@ class PrototypeAST {
     name(name), arguments(std::move(arguments)), type(type) { }
   const std::string &getName() const { return name; }
   llvm::Function *codeGen();
+  void createArgumentAllocas(Function *func);
 };
 
 class FuncAST {
@@ -127,6 +149,16 @@ class LongFuncAST {
 
   public:
   LongFuncAST(std::unique_ptr<PrototypeAST> prototype, std::vector<std::unique_ptr<AST>> body): 
+    prototype(std::move(prototype)), body(std::move(body)) { }
+  llvm::Function *codeGen();
+};
+
+class AnnonFuncAST {
+  std::unique_ptr<PrototypeAST> prototype;
+  std::vector<std::unique_ptr<AST>> body;
+
+  public:
+  AnnonFuncAST(std::unique_ptr<PrototypeAST> prototype, std::vector<std::unique_ptr<AST>> body): 
     prototype(std::move(prototype)), body(std::move(body)) { }
   llvm::Function *codeGen();
 };

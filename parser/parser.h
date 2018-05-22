@@ -17,8 +17,10 @@ class Parser {
     std::vector<std::string> namedFunctions;
 
   public:
-    // unimportant stuff:
+    // annon stuff:
     int annonCount = 0;
+    std::vector<std::unique_ptr<AST>> annonExprs;
+    std::unique_ptr<LongFuncAST> LoadAnnonFuncs ();
 
     // Basics
     int currentToken;
@@ -41,7 +43,7 @@ class Parser {
     // Identification (funcs and vars)
     std::unique_ptr<AST> ParseIdentifier();
     std::unique_ptr<AST> ParsePrimary(std::string name = ""); // Desicion maker
-    std::unique_ptr<FuncAST> ParseVariable(VarType type);
+    std::unique_ptr<AST> ParseVariable(VarType type);
 
     // Binary Parsing eg (4+4)
     int getTokenRank();
@@ -51,9 +53,9 @@ class Parser {
     std::unique_ptr<AST> ParseBinaryOporatorRHS(int exprRank, std::unique_ptr<AST> LHS);
 
     // Other Things
+    void ParseTopLevel();
     std::unique_ptr<PrototypeAST> ParsePrototype();
     std::unique_ptr<LongFuncAST> ParseDefinition();
-    std::unique_ptr<FuncAST> ParseTopLevel();
     std::unique_ptr<PrototypeAST> ParseExtern();
     std::unique_ptr<AST> ParseFor();
     std::unique_ptr<AST> ParsePrint();

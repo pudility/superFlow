@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <utility>
 #include "llvm/IR/NoFolder.h"
 
 int Parser::getNextToken() {
@@ -81,8 +82,10 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
       getNextToken(); //  move past index      
       getNextToken(); // move past `]`
      
-      if (currentToken == '=') 
+      if (currentToken == '=') {
+        getNextToken(); // Move past `=`
 				return llvm::make_unique<ArrayElementSetAST>(idName, valIndex, ParseNumber()); 
+      }
       
       return llvm::make_unique<ArrayElementAST>(idName, valIndex);
     }
@@ -131,8 +134,10 @@ std::unique_ptr<AST> Parser::ParsePrimary (std::string name) {
       return ParseParens();
     case Token::token_for:
       return ParseFor();
-    case Token::token_print:
-      return ParsePrint();
+    case Token::token_variable:
+      return ParseVariable(VarType::type_double);
+    case Token::token_array:
+      return ParseVariable(VarType::type_array);
     case Token::token_eof:
       return nullptr; //TODO: handle this better
     default: 
@@ -227,14 +232,20 @@ std::unique_ptr<LongFuncAST> Parser::ParseDefinition() {
 }
 
 // This is for parsign things that are not in functions eg `> 4+4`
-std::unique_ptr<FuncAST> Parser::ParseTopLevel () {
-  if (auto expr = ParseExpression()) {
-    auto proto = llvm::make_unique<PrototypeAST>("__anon_expr" + std::to_string(annonCount) /* TODO: this should add a coutner so that there can be mutiple */, std::vector<std::string>(), VarType::type_double);
-    annonCount++;
+void Parser::ParseTopLevel () {
+  if (auto expr = ParseExpression()) 
+    annonExprs.push_back(std::move(expr));
+}
 
-    return llvm::make_unique<FuncAST>(std::move(proto), std::move(expr));
-  }
-  return nullptr;
+std::unique_ptr<LongFuncAST> Parser::LoadAnnonFuncs () {
+  auto proto = llvm::make_unique<PrototypeAST>(
+    "__anon_expr" + std::to_string(annonCount), 
+    std::vector<std::string>(), 
+    VarType::type_double
+  );
+  annonCount++;
+
+  return llvm::make_unique<LongFuncAST>(std::move(proto), std::move(annonExprs)); // we use long func so we can return null
 }
 
 std::unique_ptr<PrototypeAST> Parser::ParseExtern() {
@@ -242,19 +253,18 @@ std::unique_ptr<PrototypeAST> Parser::ParseExtern() {
   return ParsePrototype();
 }
 
-std::unique_ptr<FuncAST> Parser::ParseVariable(VarType type) {
+std::unique_ptr<AST> Parser::ParseVariable(VarType type) {
   getNextToken(); // Move over `var`
 
   const std::string idName = mLexer->identifier;
-	namedFunctions.push_back(idName); // make sure we know about it when we are deciding whats a function and whats a variable
   
   getNextToken();
   
-  std::vector<std::string> arguments;
-  auto proto = llvm::make_unique<PrototypeAST>(idName, std::move(arguments), type);
-  
   if (auto expr = ParseExpression(idName)) 
-    return llvm::make_unique<FuncAST>(std::move(proto), std::move(expr));
+    return llvm::make_unique<VarAST>(
+      std::pair<std::string, std::unique_ptr<AST>>(idName, std::move(expr)),
+      type
+    );
 
   return nullptr;
 }

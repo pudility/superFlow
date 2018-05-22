@@ -1,10 +1,6 @@
-extern printd(num);
+extern printd(x);
 
-func x(y) {
-  4 + 4;
-  8 * 8;
-  printd(44);
-  y * 4;
-}
+array a [1 2 3];
+a[1] = 33;
 
-printd(x(10));
+printd(a[1])
