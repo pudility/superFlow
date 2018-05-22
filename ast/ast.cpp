@@ -44,7 +44,7 @@ Value *VarAST::codeGen() {
     initVal = init->codeGen();
     if (!initVal) return nullptr;
   } else {
-    initVal = (type == VarType::type_double) ? Constant::getNullValue(dType) : Constant::getNullValue(vType);
+    initVal = (type == VarType::type_double) ? Constant::getNullValue(dType) : Constant::getNullValue(aType);
   }
 
   AllocaInst *alloca = (type == VarType::type_double) ? 
@@ -55,21 +55,17 @@ Value *VarAST::codeGen() {
 }
 
 Value *ArrayAST::codeGen() {
-  Type *dType = Type::getDoubleTy(mContext);
-  Type *vectorType = VectorType::get(dType, 4);
-  Value *emptyVector = UndefValue::get(vectorType);
-  Constant *indexT = Constant::getIntegerValue(dType, llvm::APInt(32, 0));
+  Value *emptyVector = UndefValue::get(aType);
   
   std::vector<Value *> numberValues;
-  Instruction *fullVector = InsertElementInst::Create(emptyVector, numbers[0]->codeGen(), indexT);
+  Instruction *fullVector = InsertValueInst::Create(emptyVector, numbers[0]->codeGen(), 0);
   mBuilder.Insert(fullVector);
 
   int i = 0;
 
   for(auto const& n: numbers) {
     if (i == 0) goto end; // We already did this one when we set fullVector
-    indexT = Constant::getIntegerValue(dType, llvm::APInt(32, i));
-    fullVector = InsertElementInst::Create(fullVector, n->codeGen(), indexT);
+    fullVector = InsertValueInst::Create(fullVector, n->codeGen(), i);
     mBuilder.Insert(fullVector);
 end:;
     i++;
@@ -82,27 +78,24 @@ Value *ArrayElementAST::codeGen() {
   std::vector<Value *> emptyArgs; // We need to pass it this so we make an empty one
   Function *func = mBuilder.GetInsertBlock()->getParent();
   AllocaInst *alloca = namedValues[name];
-  Value *refVector = mBuilder.CreateLoad(alloca, name.c_str()); 
-  Constant *indexT = Constant::getIntegerValue(dType, llvm::APInt(32, index));
+  Value *refArray = mBuilder.CreateLoad(alloca, name.c_str()); 
 
-  Instruction *newVector = ExtractElementInst::Create(refVector, indexT);
+  Value *newArray = mBuilder.CreateExtractValue(refArray, index); 
 
-  mBuilder.Insert(newVector);
-  return newVector;
+  return newArray;
 }
 
 Value *ArrayElementSetAST::codeGen() {
   std::vector<Value *> emptyArgs; // We need to pass it this so we make an empty one
   Function *func = mBuilder.GetInsertBlock()->getParent();
   AllocaInst *alloca = namedValues[name];
-  Value *refVector = mBuilder.CreateLoad(alloca, name.c_str()); 
-  Constant *indexT = Constant::getIntegerValue(dType, llvm::APInt(32, index));
+  Value *refArray = mBuilder.CreateLoad(alloca, name.c_str()); 
 
-  Instruction *newVector = InsertElementInst::Create(refVector, newVal->codeGen(), indexT);
-  mBuilder.Insert(newVector);
-  mBuilder.CreateStore(newVector, alloca);
+  Instruction *newArray = InsertValueInst::Create(refArray, newVal->codeGen(), index);
+  mBuilder.Insert(newArray);
+  mBuilder.CreateStore(newArray, alloca);
 
-  return Constant::getNullValue(vType);
+  return Constant::getNullValue(aType);
 }
 
 Value *BinaryAST::codeGen() {

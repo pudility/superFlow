@@ -27,7 +27,7 @@ static std::unique_ptr<Module> mModule = make_unique<Module>("Super", mContext);
 static std::map<std::string, AllocaInst *> namedValues;
 static Module *M = mModule.get();
 static Type *dType = Type::getDoubleTy(mContext);
-static Type *vType = VectorType::get(dType, 4);
+static Type *aType = ArrayType::get(dType, 4); // TODO: implemnt x length
 
 static AllocaInst *entryCreateBlockAlloca(Function *func, std::string name) {
   IRBuilder<> tmpBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
@@ -36,7 +36,7 @@ static AllocaInst *entryCreateBlockAlloca(Function *func, std::string name) {
 
 static AllocaInst *entryCreateBlockAllocaArray(Function *func, std::string name) {
   IRBuilder<> tmpBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
-  return tmpBuilder.CreateAlloca(vType, nullptr, name);
+  return tmpBuilder.CreateAlloca(aType, nullptr, name);
 }
 
 class AST {
