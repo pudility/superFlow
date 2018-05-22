@@ -82,8 +82,10 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
       getNextToken(); //  move past index      
       getNextToken(); // move past `]`
      
-      if (currentToken == '=') 
+      if (currentToken == '=') {
+        getNextToken(); // Move past `=`
 				return llvm::make_unique<ArrayElementSetAST>(idName, valIndex, ParseNumber()); 
+      }
       
       return llvm::make_unique<ArrayElementAST>(idName, valIndex);
     }

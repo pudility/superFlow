@@ -99,8 +99,9 @@ Value *ArrayElementSetAST::codeGen() {
   Constant *indexT = Constant::getIntegerValue(dType, llvm::APInt(32, index));
 
   Instruction *newVector = InsertElementInst::Create(refVector, newVal->codeGen(), indexT);
-
   mBuilder.Insert(newVector);
+  mBuilder.CreateStore(newVector, alloca);
+
   return Constant::getNullValue(vType);
 }
 

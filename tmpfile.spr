@@ -1,5 +1,6 @@
 extern printd(x);
 
 array a [1 2 3];
+a[1] = 33;
 
 printd(a[1])
