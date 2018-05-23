@@ -28,6 +28,11 @@ static std::map<std::string, AllocaInst *> namedValues;
 static Module *M = mModule.get();
 static Type *dType = Type::getDoubleTy(mContext);
 static Type *aType = ArrayType::get(dType, 4); // TODO: implemnt x length
+static Value *nullValue = Constant::getNullValue(dType);
+
+static Type *ArrayTypeForType(Type *type) {
+  return ArrayType::get(type, 4);
+}
 
 static AllocaInst *entryCreateBlockAlloca(Function *func, std::string name) {
   IRBuilder<> tmpBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
@@ -37,6 +42,12 @@ static AllocaInst *entryCreateBlockAlloca(Function *func, std::string name) {
 static AllocaInst *entryCreateBlockAllocaArray(Function *func, std::string name) {
   IRBuilder<> tmpBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
   return tmpBuilder.CreateAlloca(aType, nullptr, name);
+}
+
+//TODO: we should only use this alloca
+static AllocaInst *entryCreateBlockAllocaType(Function *func, std::string name, Type* type) {
+  IRBuilder<> tmpBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
+  return tmpBuilder.CreateAlloca(type, nullptr, name);
 }
 
 class AST {
@@ -64,21 +75,21 @@ class ArrayAST: public AST {
 
 class ArrayElementAST: public AST {
   std::string name;
-  double index;
+  std::vector<double> indexs;
 
   public:
-  ArrayElementAST(std::string name, double index): name(name), index(index) { }
+  ArrayElementAST(std::string name, std::vector<double> indexs): name(name), indexs(indexs) { }
   Value *codeGen() override;
 };
 
 class ArrayElementSetAST: public AST {
   std::string name;
-  double index;
+  std::vector<double> indexs;
   std::unique_ptr<AST> newVal;
 
   public:
-  ArrayElementSetAST(std::string name, double index, std::unique_ptr<AST> newVal): 
-    name(name), index(index), newVal(std::move(newVal)) { }
+  ArrayElementSetAST(std::string name, std::vector<double> indexs, std::unique_ptr<AST> newVal): 
+    name(name), indexs(indexs), newVal(std::move(newVal)) { }
   Value *codeGen() override;
 };
 

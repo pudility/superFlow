@@ -59,7 +59,7 @@ std::unique_ptr<AST> Parser::ParseArray(std::string name) {
   std::vector<std::unique_ptr<AST>> numbers;
 
   while (currentToken != ']')
-    numbers.push_back(ParseNumber());
+    numbers.push_back(ParsePrimary());
   
   getNextToken(); // Move over `]`
 
@@ -75,19 +75,20 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
   
   if (currentToken != '(') { // We are refrencing the var not function
     if (currentToken == '[') { // We are getting an element of an array //TODO: move me to ast
-      getNextToken(); // Move past `[`
+      std::vector<double> valIndexs;
+      while (currentToken == '[') {
+        getNextToken(); // Move past `[`
+        valIndexs.push_back(mLexer->value);
+        getNextToken(); //  move past index      
+        getNextToken(); // move past `]`
+      }
 
-      double valIndex = mLexer->value;
-      
-      getNextToken(); //  move past index      
-      getNextToken(); // move past `]`
-     
       if (currentToken == '=') {
         getNextToken(); // Move past `=`
-				return llvm::make_unique<ArrayElementSetAST>(idName, valIndex, ParseNumber()); 
+				return llvm::make_unique<ArrayElementSetAST>(idName, valIndexs, ParseNumber()); 
       }
       
-      return llvm::make_unique<ArrayElementAST>(idName, valIndex);
+      return llvm::make_unique<ArrayElementAST>(idName, valIndexs);
     }
 
     if (std::find(namedFunctions.begin(), namedFunctions.end(), idName) != namedFunctions.end()) 
@@ -253,7 +254,7 @@ std::unique_ptr<PrototypeAST> Parser::ParseExtern() {
   return ParsePrototype();
 }
 
-std::unique_ptr<AST> Parser::ParseVariable(VarType type) {
+std::unique_ptr<AST> Parser::ParseVariable(VarType type) { //TODO: type does not need to exist
   getNextToken(); // Move over `var`
 
   const std::string idName = mLexer->identifier;

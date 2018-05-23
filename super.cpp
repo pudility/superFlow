@@ -90,8 +90,6 @@ static int mainLoop(Parser * &p) {
         handleTopLevel(p);
         break;
     }
-
-    std::cout << std::endl;
   }
 }
 

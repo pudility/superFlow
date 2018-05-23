@@ -47,15 +47,14 @@ Value *VarAST::codeGen() {
     initVal = (type == VarType::type_double) ? Constant::getNullValue(dType) : Constant::getNullValue(aType);
   }
 
-  AllocaInst *alloca = (type == VarType::type_double) ? 
-    entryCreateBlockAlloca(func, name) : entryCreateBlockAllocaArray(func, name);
+  AllocaInst *alloca = entryCreateBlockAllocaType(func, name, initVal->getType());
   namedValues[name] = alloca;
 
   return mBuilder.CreateStore(initVal, alloca);
 }
 
 Value *ArrayAST::codeGen() {
-  Value *emptyVector = UndefValue::get(aType);
+  Value *emptyVector = UndefValue::get(ArrayTypeForType(numbers[0]->codeGen()->getType()));
   
   std::vector<Value *> numberValues;
   Instruction *fullVector = InsertValueInst::Create(emptyVector, numbers[0]->codeGen(), 0);
@@ -80,7 +79,9 @@ Value *ArrayElementAST::codeGen() {
   AllocaInst *alloca = namedValues[name];
   Value *refArray = mBuilder.CreateLoad(alloca, name.c_str()); 
 
-  Value *newArray = mBuilder.CreateExtractValue(refArray, index); 
+  Value *newArray = mBuilder.CreateExtractValue(refArray, indexs[0]);
+  for (int i = 1; i < indexs.size(); i++)
+    newArray = mBuilder.CreateExtractValue(newArray, indexs[i]);
 
   return newArray;
 }
@@ -91,11 +92,22 @@ Value *ArrayElementSetAST::codeGen() {
   AllocaInst *alloca = namedValues[name];
   Value *refArray = mBuilder.CreateLoad(alloca, name.c_str()); 
 
-  Instruction *newArray = InsertValueInst::Create(refArray, newVal->codeGen(), index);
-  mBuilder.Insert(newArray);
-  mBuilder.CreateStore(newArray, alloca);
+  std::vector<Value *> extracts;
+  extracts.push_back(mBuilder.CreateExtractValue(refArray, indexs[0]));
+  for (int i = 1; i < indexs.size() - 1; i++) // size - 1 because we want the array holding the element not the element its self.
+    extracts.push_back(mBuilder.CreateExtractValue(extracts[extracts.size() - 1], indexs[i]));
 
-  return Constant::getNullValue(aType);
+  std::reverse(extracts.begin(), extracts.end());
+  std::reverse(indexs.begin(), indexs.end());
+  extracts.push_back(refArray);
+
+  Value *newArrayInst = mBuilder.CreateInsertValue(extracts[0], newVal->codeGen(), indexs[0]);
+
+	for (int i = 1; i < extracts.size(); i++) 
+    newArrayInst = mBuilder.CreateInsertValue(extracts[i], newArrayInst, indexs[i]);
+
+  mBuilder.CreateStore(newArrayInst, alloca);
+  return nullValue; 
 }
 
 Value *BinaryAST::codeGen() {

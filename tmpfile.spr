@@ -1,6 +1,6 @@
 extern printd(x);
 
-array a [1 2 3];
-a[1] = 33;
+array a [[[1 2 3]]];
+a[0][0][1] = 33;
 
-printd(a[1])
+printd(a[0][0][1])
