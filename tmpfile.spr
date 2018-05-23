@@ -1,6 +1,5 @@
 extern printd(x);
 
-array a [[[1 2 3]]];
-a[0][0][1] = 33;
+func add (a b) a + b;
 
-printd(a[0][0][1])
+printd(add(1, 1));

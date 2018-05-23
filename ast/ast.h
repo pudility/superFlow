@@ -56,6 +56,12 @@ class AST {
     virtual llvm::Value *codeGen() = 0;
 };
 
+class BaseFuncAST {
+  public:
+    virtual ~BaseFuncAST() { }
+    virtual llvm::Function *codeGen() = 0;
+};
+
 class NumberAST: public AST {
   double val;
 
@@ -144,27 +150,27 @@ class PrototypeAST {
   void createArgumentAllocas(Function *func);
 };
 
-class FuncAST {
+class FuncAST: public BaseFuncAST {
   std::unique_ptr<PrototypeAST> prototype;
   std::unique_ptr<AST> body;
 
   public:
   FuncAST(std::unique_ptr<PrototypeAST> prototype, std::unique_ptr<AST> body): 
     prototype(std::move(prototype)), body(std::move(body)) { }
-  llvm::Function *codeGen();
+  llvm::Function *codeGen() override;
 };
 
-class LongFuncAST {
+class LongFuncAST: public BaseFuncAST {
   std::unique_ptr<PrototypeAST> prototype;
   std::vector<std::unique_ptr<AST>> body;
 
   public:
   LongFuncAST(std::unique_ptr<PrototypeAST> prototype, std::vector<std::unique_ptr<AST>> body): 
     prototype(std::move(prototype)), body(std::move(body)) { }
-  llvm::Function *codeGen();
+  llvm::Function *codeGen() override;
 };
 
-class AnnonFuncAST {
+class AnnonFuncAST { // TODO: remove me
   std::unique_ptr<PrototypeAST> prototype;
   std::vector<std::unique_ptr<AST>> body;
 

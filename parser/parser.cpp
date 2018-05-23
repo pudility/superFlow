@@ -204,15 +204,15 @@ std::unique_ptr<PrototypeAST> Parser::ParsePrototype() {
   return llvm::make_unique<PrototypeAST>(funcName, std::move(argNames), VarType::type_double); //TODO: functions that can return any type
 }
 
-std::unique_ptr<LongFuncAST> Parser::ParseDefinition() {
+std::unique_ptr<BaseFuncAST> Parser::ParseDefinition() {
   getNextToken(); // Move over `func`
   auto proto = ParsePrototype();
   
   if (!proto) return nullptr;
  
-  std::vector<std::unique_ptr<AST>> expresssions;
-
   if (currentToken == '{') { // Multiline func
+    std::vector<std::unique_ptr<AST>> expresssions;
+
     getNextToken(); // Move past `{`
 
     while (currentToken != '}') {
@@ -224,10 +224,8 @@ std::unique_ptr<LongFuncAST> Parser::ParseDefinition() {
     return llvm::make_unique<LongFuncAST>(std::move(proto), std::move(expresssions));
   }
   
-  if (auto expr = ParseExpression()) {
-    expresssions.push_back(std::move(expr));
-    return llvm::make_unique<LongFuncAST>(std::move(proto), std::move(expresssions));
-  }
+  if (auto expr = ParseExpression()) 
+    return llvm::make_unique<FuncAST>(std::move(proto), std::move(expr));
 
   return nullptr;
 }
