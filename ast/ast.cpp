@@ -149,9 +149,7 @@ Value *CallAST::codeGen() {
 Function *PrototypeAST::codeGen() {
   std::vector<Type*> doubles(arguments.size(), dType);
   
-  FunctionType *FT = FunctionType::get(type == VarType::type_double ? 
-      dType : VectorType::get(dType, 4)
-      , doubles, false);
+  FunctionType *FT = FunctionType::get(type, doubles, false);
   Function *f = Function::Create(FT, Function::ExternalLinkage, name, M);
 
   unsigned index = 0;
@@ -163,7 +161,8 @@ Function *PrototypeAST::codeGen() {
 
 Function *FuncAST::codeGen() {
   Function *func = mModule->getFunction(prototype->getName()); // this checks if it already exists as part of llvm
-  
+  // if (Value *returnValue = body->codeGen()) prototype->type = returnValue->getType();
+
   if (!func) func = prototype->codeGen();
   
   if (!func) return nullptr;

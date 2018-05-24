@@ -201,7 +201,7 @@ std::unique_ptr<PrototypeAST> Parser::ParsePrototype() {
     getNextToken(); // Move over the closing `)`
   }
 
-  return llvm::make_unique<PrototypeAST>(funcName, std::move(argNames), VarType::type_double); //TODO: functions that can return any type
+  return llvm::make_unique<PrototypeAST>(funcName, std::move(argNames)); //TODO: functions that can return any type
 }
 
 std::unique_ptr<BaseFuncAST> Parser::ParseDefinition() {
@@ -239,8 +239,7 @@ void Parser::ParseTopLevel () {
 std::unique_ptr<LongFuncAST> Parser::LoadAnnonFuncs () {
   auto proto = llvm::make_unique<PrototypeAST>(
     "__anon_expr" + std::to_string(annonCount), 
-    std::vector<std::string>(), 
-    VarType::type_double
+    std::vector<std::string>()
   );
   annonCount++;
 
