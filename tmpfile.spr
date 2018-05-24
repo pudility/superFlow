@@ -1,5 +1,3 @@
-extern printd(x);
+func add (a b) a + b
 
-func add (a b) a + b;
-
-printd(add(1, 1));
+add (1, 2);

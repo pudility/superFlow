@@ -161,18 +161,6 @@ Function *PrototypeAST::codeGen() {
   return f;
 }
 
-void PrototypeAST::createArgumentAllocas(Function *func) {
-  Function::arg_iterator argItr = func->arg_begin();
-  for (unsigned index = 0, end = arguments.size(); index != end; ++index, ++argItr) {
-    AllocaInst *alloca = entryCreateBlockAlloca(func, arguments[index]);
-
-    mBuilder.CreateStore(argItr, alloca);
-
-    namedValues[arguments[index]] = alloca;
-  }
-}
-
-
 Function *FuncAST::codeGen() {
   Function *func = mModule->getFunction(prototype->getName()); // this checks if it already exists as part of llvm
   
