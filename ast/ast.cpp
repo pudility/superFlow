@@ -149,9 +149,7 @@ Value *CallAST::codeGen() {
 Function *PrototypeAST::codeGen() {
   std::vector<Type*> doubles(arguments.size(), dType);
   
-  FunctionType *FT = FunctionType::get(type == VarType::type_double ? 
-      dType : VectorType::get(dType, 4)
-      , doubles, false);
+  FunctionType *FT = FunctionType::get(type, doubles, false);
   Function *f = Function::Create(FT, Function::ExternalLinkage, name, M);
 
   unsigned index = 0;
@@ -161,23 +159,17 @@ Function *PrototypeAST::codeGen() {
   return f;
 }
 
-void PrototypeAST::createArgumentAllocas(Function *func) {
-  Function::arg_iterator argItr = func->arg_begin();
-  for (unsigned index = 0, end = arguments.size(); index != end; ++index, ++argItr) {
-    AllocaInst *alloca = entryCreateBlockAlloca(func, arguments[index]);
-
-    mBuilder.CreateStore(argItr, alloca);
-
-    namedValues[arguments[index]] = alloca;
-  }
-}
-
-
 Function *FuncAST::codeGen() {
   Function *func = mModule->getFunction(prototype->getName()); // this checks if it already exists as part of llvm
-  
-  if (!func) func = prototype->codeGen();
-  
+
+  if (!func) {
+    Value *tmpReturnValue = body->codeGen();
+    if (!tmpReturnValue) return nullptr;
+
+    prototype->type = tmpReturnValue->getType();
+    func = prototype->codeGen();
+  }
+ 
   if (!func) return nullptr;
 
   if (!func->empty()) return (Function*) Parser::LogErrorV("Function cannot be redefined.");
@@ -186,6 +178,7 @@ Function *FuncAST::codeGen() {
   mBuilder.SetInsertPoint(block);
 
   for (auto &arg: func->args()) {
+    std::cout << "working on arg: " << std::string(arg.getName()) << std::endl;
     AllocaInst *alloca = entryCreateBlockAlloca(func, arg.getName());
 
     mBuilder.CreateStore(&arg, alloca);
@@ -193,15 +186,13 @@ Function *FuncAST::codeGen() {
     namedValues[arg.getName()] = alloca;
   }
 
-  if (Value *returnValue = body->codeGen()) {
+  if (auto *returnValue = body->codeGen()) {
     mBuilder.CreateRet(returnValue);
-
     llvm::verifyFunction(*func);
-
+    
     return func;
   }
 
-  func->removeFromParent(); // If there is an error get rid of the function
   return nullptr;
 }
 

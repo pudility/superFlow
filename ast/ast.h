@@ -140,14 +140,14 @@ class CallAST: public AST {
 class PrototypeAST {
   std::string name;
   std::vector<std::string> arguments;
-  VarType type;
 
   public:
-  PrototypeAST(const std::string &name, std::vector<std::string> arguments, VarType type): 
-    name(name), arguments(std::move(arguments)), type(type) { }
+  PrototypeAST(const std::string &name, std::vector<std::string> arguments): 
+    name(name), arguments(std::move(arguments)) { }
   const std::string &getName() const { return name; }
   llvm::Function *codeGen();
   void createArgumentAllocas(Function *func);
+  Type *type = dType;
 };
 
 class FuncAST: public BaseFuncAST {

@@ -23,7 +23,7 @@ if [ -n "$optcomp" ] || [ -n "$optall" ] || [ -n "$opt2" ]; then
 
   ./a.out &> out.ll
 
-  clang library.cpp out.ll -o built
+  clang++ library/library.cpp out.ll -o built
 fi
 
 if [ -n "$optrun" ] || [ -n "$optall" ] || [ -n "$opt2" ]; then

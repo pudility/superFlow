@@ -1,5 +1,20 @@
-extern printd(x);
+# extern printd(x 10);
+# extern DOT(A B);
 
-func add (a b) a + b;
+# func add (a b) a + b;
 
-printd(add(1, 1));
+# array a [[1 2 3] [1 2 3] [1 2 3]]
+
+# array b [[1 2 3] [1 2 3] [1 2 3]]
+
+# DOT(a, b);
+
+# printd(add(1, 1));
+
+# func a () [1 2 3];
+# array foo [1 2 3]
+# array b a();
+
+# printd(1);
+
+func a (b) b + 1;

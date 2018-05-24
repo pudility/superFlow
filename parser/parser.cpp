@@ -90,12 +90,11 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
       
       return llvm::make_unique<ArrayElementAST>(idName, valIndexs);
     }
-
+    
     if (std::find(namedFunctions.begin(), namedFunctions.end(), idName) != namedFunctions.end()) 
 			return llvm::make_unique<CallAST>(idName, std::move(arguments)); // TODO: 
       /* this is a hack, but we will just return a function that returns the value instead of an *actual* llvm variable */
       /* if we know that the name id is a function, return a function call with no args (hacky variable) */
-
     else return llvm::make_unique<VariableAST>(idName); // otherwise return a real variable
   }
 
@@ -201,7 +200,7 @@ std::unique_ptr<PrototypeAST> Parser::ParsePrototype() {
     getNextToken(); // Move over the closing `)`
   }
 
-  return llvm::make_unique<PrototypeAST>(funcName, std::move(argNames), VarType::type_double); //TODO: functions that can return any type
+  return llvm::make_unique<PrototypeAST>(funcName, std::move(argNames)); //TODO: functions that can return any type
 }
 
 std::unique_ptr<BaseFuncAST> Parser::ParseDefinition() {
@@ -239,8 +238,7 @@ void Parser::ParseTopLevel () {
 std::unique_ptr<LongFuncAST> Parser::LoadAnnonFuncs () {
   auto proto = llvm::make_unique<PrototypeAST>(
     "__anon_expr" + std::to_string(annonCount), 
-    std::vector<std::string>(), 
-    VarType::type_double
+    std::vector<std::string>()
   );
   annonCount++;
 
