@@ -147,21 +147,22 @@ Value *CallAST::codeGen() {
 }
 
 Function *PrototypeAST::codeGen() {
-  std::vector<Type*> doubles(arguments.size(), dType);
+  std::vector<Type*> doubles;
+  for (auto &arg: arguments)
+    doubles.push_back(arg.second);
   
   FunctionType *FT = FunctionType::get(type, doubles, false);
   Function *f = Function::Create(FT, Function::ExternalLinkage, name, M);
 
   unsigned index = 0;
   for (auto &arg: f->args())
-    arg.setName(arguments[index++]);
+    arg.setName(arguments[index++].first);
 
   return f;
 }
 
 Function *FuncAST::codeGen() {
   Function *func = mModule->getFunction(prototype->getName()); // this checks if it already exists as part of llvm
-  // if (Value *returnValue = body->codeGen()) prototype->type = returnValue->getType();
 
   if (!func) func = prototype->codeGen();
   
@@ -172,12 +173,15 @@ Function *FuncAST::codeGen() {
   BasicBlock *block = BasicBlock::Create(mContext, "entry", func);
   mBuilder.SetInsertPoint(block);
 
+  int i = 0;
   for (auto &arg: func->args()) {
-    AllocaInst *alloca = entryCreateBlockAlloca(func, arg.getName());
+    AllocaInst *alloca = entryCreateBlockAllocaType(func, arg.getName(), arg.getType()); //TODO: `i` should be unnessisary
 
     mBuilder.CreateStore(&arg, alloca);
 
     namedValues[arg.getName()] = alloca;
+
+    i++;
   }
 
   if (Value *returnValue = body->codeGen()) {

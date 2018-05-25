@@ -139,14 +139,16 @@ class CallAST: public AST {
 
 class PrototypeAST {
   std::string name;
-  std::vector<std::string> arguments;
+  std::vector<std::pair<std::string, Type*>> arguments;
 
   public:
-  PrototypeAST(const std::string &name, std::vector<std::string> arguments): 
-    name(name), arguments(std::move(arguments)) { }
+  PrototypeAST(const std::string &name, std::vector<std::pair<std::string, Type*>> arguments, Type *retType = dType): 
+    name(name), arguments(std::move(arguments)) {
+      type = std::move(retType);
+    }
+  Type *type;
   const std::string &getName() const { return name; }
   llvm::Function *codeGen();
-  Type* type = dType;
 };
 
 class FuncAST: public BaseFuncAST {

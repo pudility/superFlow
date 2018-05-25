@@ -186,22 +186,29 @@ std::unique_ptr<AST> Parser::ParseBinaryOporatorRHS(int exprRank, std::unique_pt
 }
 
 std::unique_ptr<PrototypeAST> Parser::ParsePrototype() {
+  llvm::Type *retType = ParsePrimary()->codeGen()->getType();
   if (currentToken != Token::token_id) return LogErrorPlain("Expected function name (Prototype)");
   
   std::string funcName = mLexer->identifier;
 	namedFunctions.push_back(funcName); // make sure we know about it when we are deciding whats a function and whats a variable
   getNextToken();
 
-  std::vector<std::string> argNames;
+  std::vector<std::pair<std::string, llvm::Type *>> argNames;
 
   if (currentToken == '(') { // return LogErrorPlain("Expected `(` in prototype");
-    while (getNextToken() == Token::token_id) argNames.push_back(mLexer->identifier);
+    getNextToken();
+    while (currentToken != ')' /*== Token::token_id*/) {
+      std::string argName = mLexer->identifier;
+      getNextToken(); // Move past id
+      argNames.push_back(std::make_pair(argName, ParsePrimary()->codeGen()->getType()));
+    }
+
     if (currentToken != ')') return LogErrorPlain("Expected to end with `)` (Prototype)");
 
     getNextToken(); // Move over the closing `)`
   }
 
-  return llvm::make_unique<PrototypeAST>(funcName, std::move(argNames)); //TODO: functions that can return any type
+  return llvm::make_unique<PrototypeAST>(funcName, std::move(argNames), retType); //TODO: functions that can return any type
 }
 
 std::unique_ptr<BaseFuncAST> Parser::ParseDefinition() {
@@ -239,7 +246,7 @@ void Parser::ParseTopLevel () {
 std::unique_ptr<LongFuncAST> Parser::LoadAnnonFuncs () {
   auto proto = llvm::make_unique<PrototypeAST>(
     "__anon_expr" + std::to_string(annonCount), 
-    std::vector<std::string>()
+    std::vector<std::pair<std::string, Type*>>()
   );
   annonCount++;
 
