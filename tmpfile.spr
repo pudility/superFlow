@@ -1,3 +1,7 @@
-func 0 add (a 0 b 0) 1
+extern 0 printd(x 0);
 
-add (1, 1);
+array a [1 2 3];
+a[1] = 234;
+
+printd(a[1])
+

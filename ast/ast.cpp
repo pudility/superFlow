@@ -91,14 +91,19 @@ Value *ArrayElementSetAST::codeGen() {
   Function *func = mBuilder.GetInsertBlock()->getParent();
   AllocaInst *alloca = namedValues[name];
   Value *refArray = mBuilder.CreateLoad(alloca, name.c_str()); 
-
+  
   std::vector<Value *> extracts;
-  extracts.push_back(mBuilder.CreateExtractValue(refArray, indexs[0]));
-  for (int i = 1; i < indexs.size() - 1; i++) // size - 1 because we want the array holding the element not the element its self.
-    extracts.push_back(mBuilder.CreateExtractValue(extracts[extracts.size() - 1], indexs[i]));
+  
+  if (indexs.size() > 1) {
+    extracts.push_back(mBuilder.CreateExtractValue(refArray, indexs[0]));
+    std::cout << "length: " << indexs.size() << std::endl;
+    for (int i = 1; i < indexs.size() - 1; i++) // size - 1 because we want the array holding the element not the element its self.
+      extracts.push_back(mBuilder.CreateExtractValue(extracts[extracts.size() - 1], indexs[i]));
 
-  std::reverse(extracts.begin(), extracts.end());
-  std::reverse(indexs.begin(), indexs.end());
+    std::reverse(extracts.begin(), extracts.end());
+    std::reverse(indexs.begin(), indexs.end());
+  }
+
   extracts.push_back(refArray);
 
   Value *newArrayInst = mBuilder.CreateInsertValue(extracts[0], newVal->codeGen(), indexs[0]);
