@@ -14,6 +14,7 @@
 #include <iostream>
 #include <utility>
 #include "llvm/IR/NoFolder.h"
+#include "llvm/IR/DerivedTypes.h"
 
 int Parser::getNextToken() {
   return currentToken = mLexer->getToken();
@@ -54,7 +55,7 @@ std::unique_ptr<AST> Parser::ParseParens() {
   return expression;
 }
 
-std::unique_ptr<AST> Parser::ParseArray(std::string name) {
+std::unique_ptr<AST> Parser::ParseArray(std::string name, bool isPointer) {
   getNextToken(); // Move past `[`
   std::vector<std::unique_ptr<AST>> numbers;
 
@@ -63,7 +64,7 @@ std::unique_ptr<AST> Parser::ParseArray(std::string name) {
   
   getNextToken(); // Move over `]`
 
-  return llvm::make_unique<ArrayAST>(std::move(numbers), name);
+  return llvm::make_unique<ArrayAST>(std::move(numbers), name, isPointer);
 }
 
 std::unique_ptr<AST> Parser::ParseIdentifier() {
@@ -123,14 +124,18 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
   return llvm::make_unique<CallAST>(idName, std::move(arguments));
 }
 
-std::unique_ptr<AST> Parser::ParsePrimary (std::string name) {
+std::unique_ptr<AST> Parser::ParsePrimary (std::string name, bool isPointer) {
   switch(currentToken) {
+    case '*': {
+      getNextToken(); // Move past `*`
+      return ParsePrimary(name, true);
+    }
     case Token::token_id:
       return ParseIdentifier();
     case Token::token_number:
       return ParseNumber();
     case '[':
-      return ParseArray(name);
+      return ParseArray(name, isPointer);
     case '(':
       return ParseParens();
     case Token::token_for:
@@ -186,7 +191,14 @@ std::unique_ptr<AST> Parser::ParseBinaryOporatorRHS(int exprRank, std::unique_pt
 }
 
 std::unique_ptr<PrototypeAST> Parser::ParsePrototype() {
+  bool isPointer = false;
+  if (currentToken == '*') {
+    isPointer = true;
+    getNextToken(); // Move past `*`
+  }
+
   llvm::Type *retType = ParsePrimary()->codeGen()->getType();
+  if (isPointer) retType = PointerType::getUnqual(retType);
   if (currentToken != Token::token_id) return LogErrorPlain("Expected function name (Prototype)");
   
   std::string funcName = mLexer->identifier;
@@ -200,7 +212,14 @@ std::unique_ptr<PrototypeAST> Parser::ParsePrototype() {
     while (currentToken != ')' /*== Token::token_id*/) {
       std::string argName = mLexer->identifier;
       getNextToken(); // Move past id
-      argNames.push_back(std::make_pair(argName, ParsePrimary()->codeGen()->getType()));
+      bool argIsPointer = false;
+      if (currentToken == '*') {
+        argIsPointer = true;
+        getNextToken(); // Move past `*`
+      }
+      Type *argType = ParsePrimary()->codeGen()->getType();
+      if (argIsPointer) argType = PointerType::getUnqual(argType);
+      argNames.push_back(std::make_pair(argName, argType));
     }
 
     if (currentToken != ')') return LogErrorPlain("Expected to end with `)` (Prototype)");

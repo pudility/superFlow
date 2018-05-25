@@ -1,3 +1,8 @@
-func 0 add (a 0 b 0) 1
+extern 0 printd(x 0);
+extern * [0] DOT(A * [[0]] B * [[0]]);
 
-add (1, 1);
+array a [[1 2 3] [1 2 3] [1 2 3]]
+array b [[1 2 3] [1 2 3] [1 2 3]]
+array c [[1 2 3]]
+
+DOT(a, b);

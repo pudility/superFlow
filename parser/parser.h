@@ -38,11 +38,11 @@ class Parser {
     // Number Parsing
     std::unique_ptr<AST> ParseNumber();
     std::unique_ptr<AST> ParseParens();  
-    std::unique_ptr<AST> ParseArray(std::string name);
+    std::unique_ptr<AST> ParseArray(std::string name, bool isPointer = false);
 
     // Identification (funcs and vars)
     std::unique_ptr<AST> ParseIdentifier();
-    std::unique_ptr<AST> ParsePrimary(std::string name = ""); // Desicion maker
+    std::unique_ptr<AST> ParsePrimary(std::string name = "", bool isPointer = false); // Desicion maker
     std::unique_ptr<AST> ParseVariable(VarType type);
 
     // Binary Parsing eg (4+4)

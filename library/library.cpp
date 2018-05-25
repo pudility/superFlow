@@ -9,35 +9,39 @@
 using namespace std;
 
 extern "C" DLLEXPORT double *DOT(double A[3][3], double B[3][3]) {
-    int i, j, m, n, p, q = 3;
-    double C[3];
+    cout << A[0][0] << std::endl;
     
-    for (i = 0; i < m; i++)
-    {
-        C[i] = 0;
-        for (j = 0; j < n; j++)
-            C[i] +=  A[i][j] * B[i][j];
+    int i = 0;
+    int j = 0;
+    int l = 3;
+    double C[3];
+
+    // for (i = 0; i < l; i++)
+    // {
+    //     C[i] = 0;
+    //     for (j = 0; j < l; j++)
+    //         C[i] +=  A[i][j] * B[i][j];
  
-    }
+    // }
     // Printing matrix A //
     cout << "Matrix A : \n ";
-    for (i = 0; i < m; i++)
+    for (i = 0; i < l; i++)
     {
-        for (j = 0; j < n; j++)
+        for (j = 0; j < l; j++)
             cout << A[i][j] << " ";
         cout << "\n ";
     }
  
     // Printing matrix B //
     cout << "Matrix B : \n ";
-    for (i = 0; i < m; i++)
+    for (i = 0; i < l; i++)
     {
-        for (j = 0; j < n; j++)
+        for (j = 0; j < l; j++)
             cout << B[i][j] << " ";
         cout << "\n ";     
     }
     cout << "Dot product : \n ";
-    for (i = 0; i < m; i++)
+    for (i = 0; i < l; i++)
        cout << C[i] << " ";
 
     return C;

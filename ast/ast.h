@@ -27,11 +27,11 @@ static std::unique_ptr<Module> mModule = make_unique<Module>("Super", mContext);
 static std::map<std::string, AllocaInst *> namedValues;
 static Module *M = mModule.get();
 static Type *dType = Type::getDoubleTy(mContext);
-static Type *aType = ArrayType::get(dType, 4); // TODO: implemnt x length
+static Type *aType = ArrayType::get(dType, 3); // TODO: implemnt x length
 static Value *nullValue = Constant::getNullValue(dType);
 
 static Type *ArrayTypeForType(Type *type) {
-  return ArrayType::get(type, 4);
+  return ArrayType::get(type, 3);
 }
 
 static AllocaInst *entryCreateBlockAlloca(Function *func, std::string name) {
@@ -73,9 +73,11 @@ class NumberAST: public AST {
 class ArrayAST: public AST {
   std::vector<std::unique_ptr<AST>> numbers;
   std::string name;
+  bool isPointer;
 
   public:
-  ArrayAST(std::vector<std::unique_ptr<AST>> numbers, std::string name): numbers(std::move(numbers)), name(name) { }
+  ArrayAST(std::vector<std::unique_ptr<AST>> numbers, std::string name, bool isPointer): 
+    numbers(std::move(numbers)), name(name), isPointer(isPointer) { }
   llvm::Value *codeGen() override;
 };
 
