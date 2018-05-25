@@ -54,8 +54,9 @@ Value *VarAST::codeGen() {
 }
 
 Value *ArrayAST::codeGen() {
-  Type *arrayType =  isPointer ? PointerType::getUnqual(numbers[0]->codeGen()->getType()) : numbers[0]->codeGen()->getType();
-  Value *emptyVector = UndefValue::get(ArrayTypeForType(arrayType));
+  Type *arrayType = numbers[0]->codeGen()->getType(); 
+  Value *emptyVector = UndefValue::get( isPointer ?
+      PointerType::getUnqual(ArrayTypeForType(arrayType)) : ArrayTypeForType(arrayType));
   
   std::vector<Value *> numberValues;
   Instruction *fullVector = InsertValueInst::Create(emptyVector, numbers[0]->codeGen(), 0);
@@ -140,7 +141,9 @@ Value *CallAST::codeGen() {
 
   std::vector<Value *> argsV;
   for (unsigned i = 0, e = arguments.size(); i != e; ++i) {
-    argsV.push_back(arguments[i]->codeGen());
+    Value *argValue = arguments[i]->codeGen();
+
+    argsV.push_back(argValue);
     if (!argsV.back()) return nullptr;
   }
 
