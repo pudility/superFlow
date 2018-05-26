@@ -2,10 +2,11 @@ Currently this projects is in *very early* stages.
 
 To run:
 
-Modify tmpfile.spr then run
+Write your code into a file and pass the filename as the first paremeter to `run.sh`
 
+Use this:
 ```bash
-./run.sh all
+./run.sh <filename> all
 ```
 to build, compile, and run your code.
 
@@ -24,18 +25,37 @@ To only preform one of these actions, simply pass it only that argument:
 ### Functions
 ---
 ```
-func add (a b) a + b
+func 0 add (a 0 b 0) a + b # notive that commas are not used here
 ```
+To declare a function use the `func` keyword, then give an example of the type of thing you want to return (eg. if you want to return a number write `func 0`), then give the function name followed by any argument. Arguments also need examples of what they will return (eg. if you want a number as an argument write `x 0`). The last line of the function will be returned, use `;` for void.
 
 White space does not matter, so this is also valid:
 ```
-func add (a b)
+func 0 add (a 0 b 0)
   a + b
+```
+
+You can also have multi-line functions:
+```
+func 0 foo (x 0) {
+  var i x + 1
+  i * 2
+}
 ```
 
 Then just call it like this:
 ```
-add (1, 2) # notice that simi colons are used here
+add (1, 2) # notice that commas are used here
+```
+
+##### Void Functions
+A void function will return `0.0`. Here is an example:
+```
+func 0 voidFunc (a 0) {
+  a + 1
+  ;
+
+}
 ```
 
 ### Loops
@@ -51,22 +71,19 @@ you can also pass a value to step by:
 ```
 for i = 0, i < 10, 5 (i) // this will increment `i` by `5` every time
 ```
+### External Functions
+If you want to use external functions, just use the `extern` keyword. The most common use of this is probably `printd`:
+```
+extern 0 printd(x 0)
+```
 
 ### Variables
 ---
 Use `var` to make a variable.
 
-There are two types of variables *real* variables and functions that have no params that return values - this is subject to change.
-
 Here is an example of creating a variable:
 ```
 var x 10
-```
-Above is an example of a *fake* variable or a variable that is just a function pretending to be a variable.
-
-The only time *real* variables are used is in things like functions and loops:
-```
-func foo (x) x # `x` is a *real* variable
 ```
 
 ### Arrays
@@ -83,6 +100,11 @@ a[0] = 3
 
 # Get element
 printd(a[0]) #3
+```
+
+Nested arrays also work:
+```
+[[1 2 3] [1 2 3] [1 2 3]]
 ```
 
 ### Opporators
