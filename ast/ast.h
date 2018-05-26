@@ -51,6 +51,7 @@ static AllocaInst *entryCreateBlockAllocaType(Function *func, std::string name, 
   return tmpBuilder.CreateAlloca(type, nullptr, name);
 }
 
+// TODO: these methods should live elsewhere
 static Value *DoubleToInt (Value *doubleVal) {
   return mBuilder.CreateFPToUI(doubleVal, mBuilder.getInt32Ty());
 }
