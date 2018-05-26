@@ -180,7 +180,7 @@ Function *FuncAST::codeGen() {
 
   int i = 0;
   for (auto &arg: func->args()) {
-    AllocaInst *alloca = entryCreateBlockAllocaType(func, arg.getName(), arg.getType()); //TODO: `i` should be unnessisary
+    AllocaInst *alloca = entryCreateBlockAllocaType(func, arg.getName(), arg.getType());
 
     mBuilder.CreateStore(&arg, alloca);
 
@@ -213,7 +213,7 @@ Function *LongFuncAST::codeGen() {
   mBuilder.SetInsertPoint(block);
 
   for (auto &arg: func->args()) {
-    AllocaInst *alloca = entryCreateBlockAlloca(func, arg.getName());
+    AllocaInst *alloca = entryCreateBlockAllocaType(func, arg.getName(), arg.getType());
 
     mBuilder.CreateStore(&arg, alloca);
 
