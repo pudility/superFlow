@@ -24,7 +24,7 @@ To only preform one of these actions, simply pass it only that argument:
 
 ### Functions
 ---
-```swift
+```python
 func 0 add (a 0 b 0) a + b # notice that commas are not used here
 ```
 To declare a function use the `func` keyword, then give an example of the type of thing you want to return (eg. if you want to return a number write `func 0`), then give the function name followed by any arguments. Arguments also need examples of what they will return (eg. if you want a number as an argument write `x 0`). The last line of the function will be returned, use `;` for void.
