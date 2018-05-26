@@ -9,7 +9,7 @@ class Lexer {
   std::fstream ifs;
 
 	public:
-  Lexer(): ifs("tmpfile.spr", std::ifstream::in) { }
+  Lexer(std::string fileName): ifs(fileName, std::ifstream::in) { }
 	int getToken ();
   
   std::string identifier;

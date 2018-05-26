@@ -227,7 +227,7 @@ std::unique_ptr<BaseFuncAST> Parser::ParseDefinition() {
         expresssions.push_back(std::move(expr));
       getNextToken();
     }
-
+    
     return llvm::make_unique<LongFuncAST>(std::move(proto), std::move(expresssions));
   }
   

@@ -13,10 +13,14 @@
 
 class Parser {
   private:
-    Lexer *mLexer = new Lexer();
+    Lexer *mLexer; 
     std::vector<std::string> namedFunctions;
 
   public:
+    Parser(char* fileName) {
+      mLexer = new Lexer(std::string(fileName));
+    }
+
     // annon stuff:
     int annonCount = 0;
     std::vector<std::unique_ptr<AST>> annonExprs;
