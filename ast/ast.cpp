@@ -74,16 +74,16 @@ end:;
 }
 
 Value *ArrayElementAST::codeGen() {
-  std::vector<Value *> emptyArgs; // We need to pass it this so we make an empty one
-  Function *func = mBuilder.GetInsertBlock()->getParent();
   AllocaInst *alloca = namedValues[name];
   Value *refArray = mBuilder.CreateLoad(alloca, name.c_str()); 
 
-  Value *newArray = mBuilder.CreateExtractValue(refArray, indexs[0]);
-  for (int i = 1; i < indexs.size(); i++)
-    newArray = mBuilder.CreateExtractValue(newArray, indexs[i]);
+  // We have to use an instruction so we can pass variables as index
+  Value *newArray = mBuilder.CreateGEP(alloca, PrefixZero(DoubleToInt(indexs[0]->codeGen())));
+  for (int i = 1; i < indexs.size(); i++) {
+    newArray = mBuilder.CreateGEP(newArray, PrefixZero(DoubleToInt(indexs[i]->codeGen()))); 
+  }
 
-  return newArray;
+  return mBuilder.CreateLoad(newArray, "__"); // TODO: do we want to use `__` here?
 }
 
 Value *ArrayElementSetAST::codeGen() {
@@ -95,10 +95,15 @@ Value *ArrayElementSetAST::codeGen() {
   std::vector<Value *> extracts;
   
   if (indexs.size() > 1) {
-    extracts.push_back(mBuilder.CreateExtractValue(refArray, indexs[0]));
-    std::cout << "length: " << indexs.size() << std::endl;
-    for (int i = 1; i < indexs.size() - 1; i++) // size - 1 because we want the array holding the element not the element its self.
-      extracts.push_back(mBuilder.CreateExtractValue(extracts[extracts.size() - 1], indexs[i]));
+    Instruction *newArray = ExtractElementInst::Create(refArray, indexs[0]->codeGen());
+    mBuilder.Insert(newArray);
+    extracts.push_back(newArray);
+
+    for (int i = 1; i < indexs.size() - 1; i++) {// size - 1 because we want the array holding the element not the element its self.
+      Instruction *newArray = ExtractElementInst::Create(extracts[extracts.size() - 1], indexs[i]->codeGen());
+      mBuilder.Insert(newArray);
+      extracts.push_back(newArray);
+    }
 
     std::reverse(extracts.begin(), extracts.end());
     std::reverse(indexs.begin(), indexs.end());
@@ -106,10 +111,14 @@ Value *ArrayElementSetAST::codeGen() {
 
   extracts.push_back(refArray);
 
-  Value *newArrayInst = mBuilder.CreateInsertValue(extracts[0], newVal->codeGen(), indexs[0]);
+  // Again we need to use InsertElementInst so that we can have variables as indexs 
+  Instruction *newArrayInst = InsertElementInst::Create(extracts[0], newVal->codeGen(), indexs[0]->codeGen());
+  mBuilder.Insert(newArrayInst);
 
-	for (int i = 1; i < extracts.size(); i++) 
-    newArrayInst = mBuilder.CreateInsertValue(extracts[i], newArrayInst, indexs[i]);
+	for (int i = 1; i < extracts.size(); i++) {
+    newArrayInst = InsertElementInst::Create(extracts[i], newArrayInst, indexs[i]->codeGen());
+    mBuilder.Insert(newArrayInst);
+  }
 
   mBuilder.CreateStore(newArrayInst, alloca);
   return nullValue; 

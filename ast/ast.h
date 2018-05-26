@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/APInt.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/IRBuilder.h"
@@ -50,6 +51,17 @@ static AllocaInst *entryCreateBlockAllocaType(Function *func, std::string name, 
   return tmpBuilder.CreateAlloca(type, nullptr, name);
 }
 
+static Value *DoubleToInt (Value *doubleVal) {
+  return mBuilder.CreateFPToUI(doubleVal, mBuilder.getInt32Ty());
+}
+
+static ArrayRef<Value *> PrefixZero (Value *index) {
+  std::vector<Value *> out;
+  out.push_back(ConstantInt::get(mContext, APInt(32, 0)));
+  out.push_back(index);
+  return ArrayRef<Value *>(out);
+}
+
 class AST {
   public:
     virtual ~AST() { }
@@ -81,21 +93,22 @@ class ArrayAST: public AST {
 
 class ArrayElementAST: public AST {
   std::string name;
-  std::vector<double> indexs;
+  std::vector<std::unique_ptr<AST>> indexs;
 
   public:
-  ArrayElementAST(std::string name, std::vector<double> indexs): name(name), indexs(indexs) { }
+  ArrayElementAST(std::string name, std::vector<std::unique_ptr<AST>> indexs): 
+    name(name), indexs(std::move(indexs)) { }
   Value *codeGen() override;
 };
 
 class ArrayElementSetAST: public AST {
   std::string name;
-  std::vector<double> indexs;
+  std::vector<std::unique_ptr<AST>> indexs;
   std::unique_ptr<AST> newVal;
 
   public:
-  ArrayElementSetAST(std::string name, std::vector<double> indexs, std::unique_ptr<AST> newVal): 
-    name(name), indexs(indexs), newVal(std::move(newVal)) { }
+  ArrayElementSetAST(std::string name, std::vector<std::unique_ptr<AST>> indexs, std::unique_ptr<AST> newVal): 
+    name(name), indexs(std::move(indexs)), newVal(std::move(newVal)) { }
   Value *codeGen() override;
 };
 

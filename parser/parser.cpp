@@ -75,20 +75,20 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
   
   if (currentToken != '(') { // We are refrencing the var not function
     if (currentToken == '[') { // We are getting an element of an array //TODO: move me to ast
-      std::vector<double> valIndexs;
+      std::vector<std::unique_ptr<AST>> valIndexs;
       while (currentToken == '[') {
         getNextToken(); // Move past `[`
-        valIndexs.push_back(mLexer->value);
-        getNextToken(); //  move past index      
+        valIndexs.push_back(ParsePrimary());
+        // getNextToken(); //  move past index      
         getNextToken(); // move past `]`
       }
 
       if (currentToken == '=') {
         getNextToken(); // Move past `=`
-				return llvm::make_unique<ArrayElementSetAST>(idName, valIndexs, ParseNumber()); 
+				return llvm::make_unique<ArrayElementSetAST>(idName, std::move(valIndexs), ParseNumber()); //TODO: parse primary instead of number
       }
       
-      return llvm::make_unique<ArrayElementAST>(idName, valIndexs);
+      return llvm::make_unique<ArrayElementAST>(idName, std::move(valIndexs));
     }
 
     if (std::find(namedFunctions.begin(), namedFunctions.end(), idName) != namedFunctions.end()) 
