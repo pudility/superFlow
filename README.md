@@ -1,4 +1,4 @@
-Currently this projects is in *very early* stages.
+#Currently this projects is in *very early* stages.
 
 To run:
 
@@ -68,7 +68,7 @@ for i = 0, i < 10 (
 you can also pass a value to step by:
 
 ```python
-for i = 0, i < 10, 5 (i) // this will increment `i` by `5` every time
+for i = 0, i < 10, 5 (i) # this will increment `i` by `5` every time
 ```
 ### External Functions
 If you want to use external functions, just use the `extern` keyword. The most common use of this is probably `printd`:
