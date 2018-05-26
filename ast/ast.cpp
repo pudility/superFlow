@@ -21,6 +21,33 @@
 
 using namespace llvm;
 
+static Type *ArrayTypeForType(Type *type) {
+  return ArrayType::get(type, 4);
+}
+
+static AllocaInst *entryCreateBlockAlloca(Function *func, std::string name) {
+  IRBuilder<> tmpBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
+  return tmpBuilder.CreateAlloca(dType, nullptr, name);
+}
+
+//TODO: we should only use this alloca
+static AllocaInst *entryCreateBlockAllocaType(Function *func, std::string name, Type* type) {
+  IRBuilder<> tmpBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
+  return tmpBuilder.CreateAlloca(type, nullptr, name);
+}
+
+// TODO: these methods should live elsewhere
+static Value *DoubleToInt (Value *doubleVal) {
+  return mBuilder.CreateFPToUI(doubleVal, mBuilder.getInt32Ty());
+}
+
+static ArrayRef<Value *> PrefixZero (Value *index) {
+  std::vector<Value *> out;
+  out.push_back(ConstantInt::get(mContext, APInt(32, 0)));
+  out.push_back(index);
+  return ArrayRef<Value *>(out);
+}
+
 Value *NumberAST::codeGen() {
   return ConstantFP::get(mContext, APFloat(val));
 }
@@ -78,7 +105,7 @@ Value *ArrayElementAST::codeGen() {
 
   // We have to use an instruction so we can pass variables as index
   Value *newArray = mBuilder.CreateGEP(alloca, PrefixZero(DoubleToInt(indexs[0]->codeGen())));
-  for (int i = 1; i < indexs.size(); i++) {
+  for (unsigned i = 1; i < indexs.size(); i++) {
     newArray = mBuilder.CreateGEP(newArray, PrefixZero(DoubleToInt(indexs[i]->codeGen()))); 
   }
 
@@ -87,7 +114,6 @@ Value *ArrayElementAST::codeGen() {
 
 Value *ArrayElementSetAST::codeGen() {
   std::vector<Value *> emptyArgs; // We need to pass it this so we make an empty one
-  Function *func = mBuilder.GetInsertBlock()->getParent(); // TODO: this does not work in Long Funcs
   AllocaInst *alloca = namedValues[name];
   
   std::vector<Value *> extracts;
@@ -97,7 +123,7 @@ Value *ArrayElementSetAST::codeGen() {
       mBuilder.CreateGEP(alloca, PrefixZero(DoubleToInt(indexs[0]->codeGen())));
     extracts.push_back(newArray);
 
-    for (int i = 1; i < indexs.size(); i++) {
+    for (unsigned i = 1; i < indexs.size(); i++) {
       newArray = 
         mBuilder.CreateGEP(
           extracts[extracts.size() - 1], PrefixZero(DoubleToInt(indexs[i]->codeGen()))
@@ -283,7 +309,6 @@ Value *ForAST::codeGen() {
 
   endCondition = mBuilder.CreateFCmpONE(endCondition, ConstantFP::get(mContext, APFloat(0.0)), "loopcond");
 
-  BasicBlock *loopEndBlock = mBuilder.GetInsertBlock();
   BasicBlock *afterBlock = BasicBlock::Create(mContext, "afterloop", func);
 
   mBuilder.CreateCondBr(endCondition, loopBlock, afterBlock);

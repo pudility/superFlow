@@ -16,7 +16,6 @@
 
 static void handleFunc(Parser * &p) {
   if (auto fnAST = p->ParseDefinition()) {
-    // std::cout << "Function" << std::endl;
 		if (auto *fnIR = fnAST->codeGen())
 			fnIR->print(llvm::errs());
   } else
@@ -25,7 +24,6 @@ static void handleFunc(Parser * &p) {
 
 static void loadTopLevel(Parser * &p) {
   if (auto fnAST = p->LoadAnnonFuncs()) {
-    // std::cout << "Top Level" << std::endl;
     if (auto *fnIR = fnAST->codeGen()) //TODO: clean up printing
 			fnIR->print(llvm::errs());
   } else
@@ -38,29 +36,10 @@ static void handleTopLevel(Parser * &p) {
 
 static void handleExtern(Parser * &p) {
   if (auto fnAST = p->ParseExtern()) {
-    // std::cout << "External" << std::endl;
     if (auto *fnIR = fnAST->codeGen())
       fnIR->print(llvm::errs());
   } else
     std::cerr << "Error - failed to parse extern" << std::endl;
-}
-
-static void handleVar(Parser * &p) {
-  if (auto fnAST = p->ParseVariable(VarType::type_double)) {
-    // std::cout << "Variable" << std::endl;
-    if (auto *fnIR = fnAST->codeGen())
-      fnIR->print(llvm::errs());
-  } else
-    std::cerr << "Error - failed to parse variable" << std::endl;
-}
-
-static void handleArrayVar(Parser * &p) {
-  if (auto fnAST = p->ParseVariable(VarType::type_array)) {
-    // std::cout << "Array Variable" << std::endl;
-    if (auto *fnIR = fnAST->codeGen())
-      fnIR->print(llvm::errs());
-  } else
-    std::cerr << "Error - failed to parse variable" << std::endl;
 }
 
 static int mainLoop(Parser * &p) {
@@ -72,9 +51,6 @@ static int mainLoop(Parser * &p) {
       case '}': // TODO: this is a hack that we should not have to do
         p->getNextToken();
         break;
-//      case Token::token_variable:
-//        handleVar(p);
-//        break;
       case Token::token_eof:
         return -1;
       case Token::token_func:
@@ -83,9 +59,6 @@ static int mainLoop(Parser * &p) {
       case Token::token_extern:
         handleExtern(p);
         break;
-//      case Token::token_array:
-//        handleArrayVar(p);
-//        break;
       default:
         handleTopLevel(p);
         break;

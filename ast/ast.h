@@ -31,38 +31,6 @@ static Type *dType = Type::getDoubleTy(mContext);
 static Type *aType = ArrayType::get(dType, 4); // TODO: implemnt x length
 static Value *nullValue = Constant::getNullValue(dType);
 
-static Type *ArrayTypeForType(Type *type) {
-  return ArrayType::get(type, 4);
-}
-
-static AllocaInst *entryCreateBlockAlloca(Function *func, std::string name) {
-  IRBuilder<> tmpBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
-  return tmpBuilder.CreateAlloca(dType, nullptr, name);
-}
-
-static AllocaInst *entryCreateBlockAllocaArray(Function *func, std::string name) {
-  IRBuilder<> tmpBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
-  return tmpBuilder.CreateAlloca(aType, nullptr, name);
-}
-
-//TODO: we should only use this alloca
-static AllocaInst *entryCreateBlockAllocaType(Function *func, std::string name, Type* type) {
-  IRBuilder<> tmpBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
-  return tmpBuilder.CreateAlloca(type, nullptr, name);
-}
-
-// TODO: these methods should live elsewhere
-static Value *DoubleToInt (Value *doubleVal) {
-  return mBuilder.CreateFPToUI(doubleVal, mBuilder.getInt32Ty());
-}
-
-static ArrayRef<Value *> PrefixZero (Value *index) {
-  std::vector<Value *> out;
-  out.push_back(ConstantInt::get(mContext, APInt(32, 0)));
-  out.push_back(index);
-  return ArrayRef<Value *>(out);
-}
-
 class AST {
   public:
     virtual ~AST() { }
