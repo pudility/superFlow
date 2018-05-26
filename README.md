@@ -25,9 +25,9 @@ To only preform one of these actions, simply pass it only that argument:
 ### Functions
 ---
 ```
-func 0 add (a 0 b 0) a + b # notive that commas are not used here
+func 0 add (a 0 b 0) a + b # notice that commas are not used here
 ```
-To declare a function use the `func` keyword, then give an example of the type of thing you want to return (eg. if you want to return a number write `func 0`), then give the function name followed by any argument. Arguments also need examples of what they will return (eg. if you want a number as an argument write `x 0`). The last line of the function will be returned, use `;` for void.
+To declare a function use the `func` keyword, then give an example of the type of thing you want to return (eg. if you want to return a number write `func 0`), then give the function name followed by any arguments. Arguments also need examples of what they will return (eg. if you want a number as an argument write `x 0`). The last line of the function will be returned, use `;` for void.
 
 White space does not matter, so this is also valid:
 ```
@@ -54,7 +54,6 @@ A void function will return `0.0`. Here is an example:
 func 0 voidFunc (a 0) {
   a + 1
   ;
-
 }
 ```
 
@@ -62,7 +61,7 @@ func 0 voidFunc (a 0) {
 ---
 ```
 for i = 0, i < 10 (
-  // do something with `i`
+# do something with `i`
 )
 ```
 
@@ -123,3 +122,7 @@ Here are some examples of how to use them:
 ### Comments
 Simply use `#` to comment lines :)
 
+### Notes on the language
+
+* Everything is passed by reference.
+* Functions are compiled before everything else, so you cannot use variables you define at the top level (this will be fixed soon)
