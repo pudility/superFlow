@@ -110,13 +110,6 @@ Value *ArrayElementSetAST::codeGen() {
   }
 
   mBuilder.CreateStore(newVal->codeGen(), extracts[0]);
-
-//	for (int i = 1; i < extracts.size(); i++) {
-//    newArrayInst = InsertElementInst::Create(extracts[i], newArrayInst, indexs[i]->codeGen());
-//    mBuilder.Insert(newArrayInst);
-//  }
-//
-//  mBuilder.CreateStore(newArrayInst, alloca);
   return nullValue; 
 }
 
@@ -251,29 +244,6 @@ Function *LongFuncAST::codeGen() {
   return nullptr;
 }
 
-// Function *AnnonFuncAST::codeGen() {
-//   Function *func = prototype->codeGen();
-//   
-//   if (!func) return nullptr;
-// 
-//   if (!func->empty()) return (Function*) Parser::LogErrorV("Function cannot be redefined.");
-// 
-//   if (!annonBlock) annonBlock = BasicBlock::Create(mContext, "entry", func);
-//   mBuilder.SetInsertPoint(annonBlock);
-// 
-//   Constant *exprConst;
-//   for (auto &expr: body) {
-//     Value *exprValue = expr->codeGen();
-//     exprConst = dyn_cast<Constant>(exprValue);
-//     mBuilder.Insert(exprConst);
-//   }
-// 
-//   mBuilder.CreateRet(Constant::getNullValue(dType));
-//   llvm::verifyFunction(*func);
-// 
-//   return func;
-// }
-
 Value *ForAST::codeGen() {
   Function *func = mBuilder.GetInsertBlock()->getParent();
 
@@ -289,9 +259,6 @@ Value *ForAST::codeGen() {
 
   mBuilder.CreateBr(loopBlock);
   mBuilder.SetInsertPoint(loopBlock);
-
-//  PHINode *var = mBuilder.CreatePHI(dType, 2, varName);
-//  var->addIncoming(startV, preHeaderBlock);
 
   AllocaInst *oldVal = namedValues[varName];
   namedValues[varName] = alloca;
@@ -322,7 +289,6 @@ Value *ForAST::codeGen() {
   mBuilder.CreateCondBr(endCondition, loopBlock, afterBlock);
 
   mBuilder.SetInsertPoint(afterBlock);
-//  var->addIncoming(nextVar, loopEndBlock);
 
   if (oldVal)
     namedValues[varName] = oldVal;
