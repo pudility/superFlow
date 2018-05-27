@@ -14,7 +14,6 @@
 class Parser {
   private:
     Lexer *mLexer; 
-    std::vector<std::string> namedFunctions;
 
   public:
     Parser(char* fileName) {

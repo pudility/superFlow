@@ -90,13 +90,12 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
       
       return llvm::make_unique<ArrayElementAST>(idName, std::move(valIndexs));
     }
-
-    if (std::find(namedFunctions.begin(), namedFunctions.end(), idName) != namedFunctions.end()) 
-			return llvm::make_unique<CallAST>(idName, std::move(arguments)); // TODO: 
-      /* this is a hack, but we will just return a function that returns the value instead of an *actual* llvm variable */
-      /* if we know that the name id is a function, return a function call with no args (hacky variable) */
-
-    else return llvm::make_unique<VariableAST>(idName); // otherwise return a real variable
+    
+    if (currentToken == '=') {
+      getNextToken(); // Move past `=`
+      return llvm::make_unique<VariableSetAST>(idName, ParsePrimary()); // return a set variable call
+    }
+    return llvm::make_unique<VariableAST>(idName); // otherwise return a variable
   }
 
   // This means that we are calling a function
@@ -190,7 +189,6 @@ std::unique_ptr<PrototypeAST> Parser::ParsePrototype() {
   if (currentToken != Token::token_id) return LogErrorPlain("Expected function name (Prototype)");
   
   std::string funcName = mLexer->identifier;
-	namedFunctions.push_back(funcName); // make sure we know about it when we are deciding whats a function and whats a variable
   getNextToken();
 
   std::vector<std::pair<std::string, llvm::Type *>> argNames;

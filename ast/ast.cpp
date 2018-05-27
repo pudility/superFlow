@@ -54,9 +54,17 @@ Value *NumberAST::codeGen() {
 
 Value *VariableAST::codeGen() {
   Value *v = namedValues[name];
+
   if (!v) Parser::LogErrorV("Unknown Variable Name");
 
   return mBuilder.CreateLoad(v, name.c_str()); // Its okay to rutun v even if it is a nullptr - that will just bubble up the error
+}
+
+Value *VariableSetAST::codeGen() {
+  AllocaInst *alloca = namedValues[name];
+  if (!alloca) return Parser::LogErrorV("Unknow Variable Name");
+
+  return mBuilder.CreateStore(val->codeGen(), alloca);
 }
 
 Value *VarAST::codeGen() {

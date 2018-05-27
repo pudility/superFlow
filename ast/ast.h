@@ -89,6 +89,16 @@ class VariableAST: public AST {
   llvm::Value *codeGen() override;
 };
 
+class VariableSetAST: public AST {
+  std::string name;
+  std::unique_ptr<AST> val;
+
+  public:
+  VariableSetAST(const std::string &name, std::unique_ptr<AST> val): 
+    name(name), val(std::move(val)) { }
+  llvm::Value *codeGen() override;
+};
+
 class VarAST: public AST {
   std::pair<std::string, std::unique_ptr<AST>> var;
   VarType type;
