@@ -22,7 +22,7 @@ int Lexer::getToken () {
   while (isspace(lastChar) && ifs.good())
     lastChar = ifs.get();
 
-  if (isalpha(lastChar)) { // this means its a letter or number
+  if (isalpha(lastChar) || '_') { // this means its a letter or number
     identifier = lastChar;
     while (ifs.good() && isalnum((lastChar = ifs.get())))
       identifier += lastChar;
