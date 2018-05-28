@@ -5,17 +5,25 @@ optrun=
 optcomp=
 optall=
 opt2=
+optd=
 for x; do
   if [ "$x" = "all" ]; then optall=1; break; fi
   if [ "$x" = "2" ]; then opt2=1; break; fi
   if [ "$x" = "build" ]; then optbuild=1; break; fi
   if [ "$x" = "compile" ]; then optcomp=1; break; fi
   if [ "$x" = "run" ]; then optrun=1; break; fi
+  if [ "$x" = "d" ]; then optd=1; break; fi
 done
 if [ -n "$optbuild" ] || [ -n "$optall" ]; then
   echo "building... "
 
   clang++ super.cpp ast/ast.cpp lexer/lexer.cpp parser/parser.cpp `llvm-config --cxxflags --ldflags --system-libs --libs core mcjit native` -O3
+fi
+
+if [ -n "$optd" ]; then
+  echo "building (debug)... "
+
+  clang++ super.cpp ast/ast.cpp lexer/lexer.cpp parser/parser.cpp `llvm-config --cxxflags --ldflags --system-libs --libs core mcjit native` -O3 -g
 fi
 
 if [ -n "$optcomp" ] || [ -n "$optall" ] || [ -n "$opt2" ]; then

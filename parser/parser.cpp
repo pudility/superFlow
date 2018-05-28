@@ -71,8 +71,6 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
   
   getNextToken(); // Move past the identifier
 
-  std::vector<std::unique_ptr<AST>> arguments; // we declare this here even because we might need to use it as an empty
-  
   if (currentToken != '(') { // We are refrencing the var not function
     if (currentToken == '[') { // We are getting an element of an array //TODO: move me to ast
       std::vector<std::unique_ptr<AST>> valIndexs;
@@ -85,7 +83,7 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
 
       if (currentToken == '=') {
         getNextToken(); // Move past `=`
-				return llvm::make_unique<ArrayElementSetAST>(idName, std::move(valIndexs), ParseNumber()); //TODO: parse primary instead of number
+				return llvm::make_unique<ArrayElementSetAST>(idName, std::move(valIndexs), ParsePrimary()); //TODO: parseexpression might be better for this and setvarast
       }
       
       return llvm::make_unique<ArrayElementAST>(idName, std::move(valIndexs));
@@ -97,6 +95,8 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
     }
     return llvm::make_unique<VariableAST>(idName); // otherwise return a variable
   }
+
+  std::vector<std::unique_ptr<AST>> arguments; 
 
   // This means that we are calling a function
   getNextToken(); // Move past opening parenthesis
@@ -302,16 +302,13 @@ std::unique_ptr<AST> Parser::ParseFor() {
     if (!step) return nullptr;
   }
 
-//   if (currentToken != Token::token_in)
-//     return LogError("expected 'in' after for");
-//   getNextToken(); // Move past `in`
-
-  auto body = ParseExpression();
+  auto body = ParsePrimary();
   if (!body) return nullptr;
 
-  return llvm::make_unique<ForAST> (idName, std::move(start), std::move(end), std::move(start), std::move(body));
+  return llvm::make_unique<ForAST> (idName, std::move(start), std::move(end), std::move(step), std::move(body));
 }
 
+//TODO: im unsused
 std::unique_ptr<AST> Parser::ParsePrint() {
   getNextToken(); // Move past `print`
 

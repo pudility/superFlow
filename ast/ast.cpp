@@ -126,7 +126,7 @@ Value *ArrayElementSetAST::codeGen() {
   
   std::vector<Value *> extracts;
   
-  if (indexs.size() > 1) {
+  if (indexs.size() > 0) {
     Value *newArray = 
       mBuilder.CreateGEP(alloca, PrefixZero(DoubleToInt(indexs[0]->codeGen())));
     extracts.push_back(newArray);
@@ -142,7 +142,7 @@ Value *ArrayElementSetAST::codeGen() {
     std::reverse(extracts.begin(), extracts.end());
     std::reverse(indexs.begin(), indexs.end());
   }
-
+  
   mBuilder.CreateStore(newVal->codeGen(), extracts[0]);
   return nullValue; 
 }
@@ -288,7 +288,6 @@ Value *ForAST::codeGen() {
 
   mBuilder.CreateStore(startV, alloca);
 
-//  BasicBlock *preHeaderBlock = mBuilder.GetInsertBlock();
   BasicBlock *loopBlock = BasicBlock::Create(mContext, "loop", func);
 
   mBuilder.CreateBr(loopBlock);
