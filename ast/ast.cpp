@@ -175,7 +175,8 @@ Value *CallAST::codeGen() {
   Function *fCallee = mModule->getFunction(callee);
   if (!fCallee) return Parser::LogErrorV((std::string("Unknown Function: ") + callee).c_str());
 
-  if (fCallee->arg_size() != arguments.size()) return Parser::LogErrorV("Incorrect # arguments passed");
+  if (fCallee->arg_size() != arguments.size()) 
+    return Parser::LogErrorV((std::string("Incorrect # arguments passed to funtion: ") + callee).c_str());
 
   std::vector<Value *> argsV;
   for (unsigned i = 0, e = arguments.size(); i != e; ++i) {

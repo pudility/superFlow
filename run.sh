@@ -1,5 +1,7 @@
 #!/bin/sh
 
+mkdir -p tmp
+
 optbuild=
 optrun=
 optcomp=
@@ -29,7 +31,9 @@ fi
 if [ -n "$optcomp" ] || [ -n "$optall" ] || [ -n "$opt2" ]; then
   echo "compiling... "
 
-  ./a.out $1 &> out.ll
+  less library/matrix.spr > tmp/out.spr
+  less $1 >> tmp/out.spr
+  ./a.out tmp/out.spr &> out.ll
 
   clang++ library/library.cpp out.ll -o built
 fi
