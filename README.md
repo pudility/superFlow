@@ -22,6 +22,21 @@ To only preform one of these actions, simply pass it only that argument:
 ./run.sh run # run compiled code
 ```
 
+### Performance
+---
+Speed test of generating and testing 100 neural networks
+```bash
+superFlow(master): time python tmp/nn.py
+python tmp/nn.py  11.24s user 0.11s system 98% cpu 11.550 total
+superFlow(master): time ./built
+./built  2.09s user 0.01s system 99% cpu 2.107 total<Paste>
+```
+This makes [it](https://github.com/pudility/superFlow/blob/master/nn_example.spr) about 5 times faster than an [equivilant python script](https://gist.github.com/miloharper/62fe5dcc581131c96276#file-short_version-py).
+
+### Building neural networks
+---
+More coming soon! For now see [the example](https://github.com/pudility/superFlow/blob/master/nn_example.spr).
+
 ### Functions
 ---
 ```python
