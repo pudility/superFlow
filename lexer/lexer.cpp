@@ -19,7 +19,7 @@ int Lexer::getToken () {
   static int lastChar = ' ';
 
   // This is for skipping white space
-  while (isspace(lastChar) && ifs.good())
+  while ((isspace(lastChar) || lastChar == '_') && ifs.good())
     lastChar = ifs.get();
 
   if (isalpha(lastChar)) { // this means its a letter or number
