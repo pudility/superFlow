@@ -19,17 +19,17 @@ int Parser::getNextToken() {
   return currentToken = mLexer->getToken();
 }
 
-std::unique_ptr<AST> Parser::LogError (const char *str) {
+std::unique_ptr<AST> Parser::LogError (const char str[]) {
   std::cerr << "Error: " << str << std::endl;
   return nullptr;
 }
 
-std::unique_ptr<PrototypeAST> Parser::LogErrorPlain(const char *str) { // TODO: Prototype not Plain
+std::unique_ptr<PrototypeAST> Parser::LogErrorPlain(const char str[]) { // TODO: Prototype not Plain
   LogError(str);
   return nullptr;
 }
 
-llvm::Value *Parser::LogErrorV(const char *str) { // Right now this does the same thing as log error but it will be difforent later
+llvm::Value *Parser::LogErrorV(const char str[]) { // Right now this does the same thing as log error but it will be difforent later
   LogError(str);
   return nullptr;
 }
@@ -102,7 +102,7 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
   getNextToken(); // Move past opening parenthesis
   if (currentToken != ')') { // the function has arguments
     while (true) {
-      if (auto arg = ParseExpression())
+      if (auto arg = ParsePrimary())
         arguments.push_back(std::move(arg));
       else
         return nullptr;

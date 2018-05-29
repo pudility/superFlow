@@ -12,7 +12,7 @@
 #include "lexer.h"
 
 bool isoporator (char opp) {
-  return opp == '+' || opp == '-' || opp == '*' || opp == '<';
+  return opp == '+' || opp == '-' || opp == '*' || opp == '<' || opp == '/';
 }
 
 int Lexer::getToken () {
@@ -22,7 +22,7 @@ int Lexer::getToken () {
   while (isspace(lastChar) && ifs.good())
     lastChar = ifs.get();
 
-  if (isalpha(lastChar) || '_') { // this means its a letter or number
+  if (isalpha(lastChar)) { // this means its a letter or number
     identifier = lastChar;
     while (ifs.good() && isalnum((lastChar = ifs.get())))
       identifier += lastChar;

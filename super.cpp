@@ -72,6 +72,7 @@ int main(int argc, char* argv[]) {
   p->BinaryOpporatorRank['+'] = 20;
   p->BinaryOpporatorRank['-'] = 20;
   p->BinaryOpporatorRank['*'] = 40;
+  p->BinaryOpporatorRank['/'] = 50;
 
   p->getNextToken();
 

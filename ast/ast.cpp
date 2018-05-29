@@ -55,14 +55,15 @@ Value *NumberAST::codeGen() {
 Value *VariableAST::codeGen() {
   Value *v = namedValues[name];
 
-  if (!v) Parser::LogErrorV("Unknown Variable Name");
+  if (!v) Parser::LogErrorV((std::string("Unknown Variable Name: ") + name).c_str());
 
   return mBuilder.CreateLoad(v, name.c_str()); // Its okay to rutun v even if it is a nullptr - that will just bubble up the error
 }
 
 Value *VariableSetAST::codeGen() {
   AllocaInst *alloca = namedValues[name];
-  if (!alloca) return Parser::LogErrorV("Unknow Variable Name");
+  if (!alloca) 
+    return Parser::LogErrorV((std::string("Unknown Variable Name: ") + name).c_str()); 
 
   return mBuilder.CreateStore(val->codeGen(), alloca);
 }
@@ -160,6 +161,8 @@ Value *BinaryAST::codeGen() {
       return mBuilder.CreateFSub(L, R, "subtmp");
     case '*':
       return mBuilder.CreateFMul(L, R, "multmp");
+    case '/':
+      return mBuilder.CreateFDiv(L, R, "divtmp");
     case '<':
       L = mBuilder.CreateFCmpULT(L, R, "cmptmp");
       return mBuilder.CreateUIToFP(L, Type::getDoubleTy(mContext), "booltmp"); // Convertes the above comparison to a double (0.0 or 1.0)
@@ -170,7 +173,7 @@ Value *BinaryAST::codeGen() {
 
 Value *CallAST::codeGen() {
   Function *fCallee = mModule->getFunction(callee);
-  if (!fCallee) return Parser::LogErrorV("Unknown function referenced");
+  if (!fCallee) return Parser::LogErrorV((std::string("Unknown Function: ") + callee).c_str());
 
   if (fCallee->arg_size() != arguments.size()) return Parser::LogErrorV("Incorrect # arguments passed");
 
@@ -259,8 +262,8 @@ Function *LongFuncAST::codeGen() {
     mBuilder.Insert(exprConst);
   }
 
-  if (exprConst) { // TODO: make a return for null value if this is null
-    mBuilder.CreateRet(exprConst); // TODO: This should not matter, but we might want to change this to exprValue
+  if (auto retValue = body[body.size() - 1]->codeGen()) { // TODO: make a return for null value if this is null
+    mBuilder.CreateRet(retValue); // TODO: This should not matter, but we might want to change this to exprValue
 
     llvm::verifyFunction(*func);
 
