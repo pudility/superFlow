@@ -1,4 +1,4 @@
-#Currently this projects is in *very early* stages.
+Currently this projects is in *very early* stages.
 
 To run:
 
