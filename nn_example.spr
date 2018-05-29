@@ -19,14 +19,13 @@ func [[0]] TEST (in [[0]] out [[0]] bweight [[0]]) {
     weight[i] = bweight[0][i];
   
   test = NORMALIZE(_EXP(_NEGATE(_DOT(in, bweight))));
-  weight = _ADD(
+  weight = ADD(
     weight, 
-    _MULTIPLY(
-      _MULTIPLY(
-        _DOT(in, _SUBTRACT(out, test)), 
-        test
+    MULTIPLY(
+      MULTIPLY(
+        DOT(in, SUBTRACT(out, test)), test
       ), 
-      _DECREMENT(test)
+      DECREMENT(test)
     )
   );
   

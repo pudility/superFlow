@@ -35,7 +35,48 @@ This makes [it](https://github.com/pudility/superFlow/blob/master/nn_example.spr
 
 ### Building neural networks
 ---
-More coming soon! For now see [the example](https://github.com/pudility/superFlow/blob/master/nn_example.spr).
+More coming soon! For now use the built in functions (Note these are not fully developed and often only work in specifit use cases).
+
+Here is an example of a basic neural network:
+```python
+extern 0 printd(x 0);
+
+array in [[0 0 1] [1 1 1] [1 0 1]]
+array out [[0 1 1]]
+array test [0 0 0]
+array weight [[0 0 0]];
+
+for i = 0, i < 10000
+  weight = TEST (in, out, weight);
+
+test = NORMALIZE(_EXP(_NEGATE(_DOT([[1 1 1]], weight)))); # change `[0 0 1]` to whatever you want to test. The out put should match the first element of the array
+printd(test[0]);
+
+func [[0]] TEST (in [[0]] out [[0]] bweight [[0]]) {
+  array test [0 0 0];
+  array weight [0 0 0];
+
+  for i = 0, i < 3
+    weight[i] = bweight[0][i];
+  
+  test = NORMALIZE(_EXP(_NEGATE(_DOT(in, bweight))));
+  weight = ADD(
+    weight, 
+    MULTIPLY(
+      MULTIPLY(
+        DOT(in, SUBTRACT(out, test)), test
+      ), 
+      DECREMENT(test)
+    )
+  );
+  
+  array nweight [[0 0 0]];
+  for i = 0, i < 3
+    nweight[0][i] = weight[i];
+
+  nweight;
+}
+```
 
 ### Functions
 ---
