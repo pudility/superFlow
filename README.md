@@ -66,7 +66,7 @@ func [[0]] TEST (in [[0]] out [[0]] bweight [[0]]) {
   for i = 0, i < 3 # shrink the weight so we can work with it - we wont have to do this in the future.
     weight[i] = bweight[0][i];
   
-  test = RUN(in, bweight);
+  test = RUN(in, bweight); # test the neural network
   weight = ADD( # update the weight according to the test we ran
     weight, # the old weight
     MULTIPLY(
