@@ -1,0 +1,108 @@
+extern 0 printd(x 0)
+extern 0 exp (x 0)
+
+array in [[0 0 1] [1 1 1] [1 0 1]]
+array out [[0 1 1]]
+array test [0 0 0]
+array weight [[0 0 0]];
+
+for i = 0, i < 10000
+  weight = TEST (in, out, weight);
+
+test = ZERO(EXP(NEGATE(DOT([[1 1 1]], weight)))); # change `[0 0 1]` to whatever you want to test. The out put should match the first element of the array
+printd(test[0]);
+
+func [0] MULTM (A [0] B[0]) {
+  array out [0 0 0];
+  for i = 0, i < 3
+    out[i] = (A[i] * B[i]);
+  out;
+}
+
+func [0] DEC (A [0]) {
+  array out [0 0 0];
+  for i = 0, i < 3
+    out[i] = (1 - A[i]);
+  out;
+}
+
+func [[0]] SUBTEST (A [[0]] B [0]) {
+  array out [[0 0 0]];
+  for i = 0, i < 3
+    out[0][i] = (A[0][i] - B[i]);
+  out;
+}
+
+func [0] DOT(A [[0]] B [[0]]) {
+  array out [0 0 0];
+  for i = 0, i < 3
+    for j = 0, j < 3 
+      out[i] = (A[i][j] * B[0][j] + out[i]); # for now we are hardcoding 0 but that should be i
+
+#  printd(3);
+#  printd(out[0]);
+#  printd(out[1]);
+#  printd(out[2]);
+
+  out;
+}
+
+func [0] ADD(A [0]) {
+  array out [0 0 0];
+  for i = 0, i < 3
+    out[i] = (A[i] + 1);
+  out;
+}
+
+func [0] ADDM(A [0] B [0]) {
+  array out [0 0 0];
+  for i = 0, i < 3
+    out[i] = (A[i] + B[i]);
+  out;
+}
+
+func [0] DIV(A [0]) {
+  array out [0 0 0];
+  for i = 0, i < 3
+    out[i] = (1 / A[i]);
+  out;
+}
+
+func [0] ZERO(A [0]) {
+  array out [0 0 0];
+  out = ADD(A);
+  out = DIV(out);
+  out;
+}
+
+
+func [0] EXP(A [0]) {
+  array out [0 0 0];
+  for i = 0, i < 3
+    out[i] = exp(A[i]);
+  out;
+}
+
+func [0] NEGATE (A [0]) {
+  array out [0 0 0];
+  for i = 0, i < 3
+    out[i] = (0 - A[i]);
+  out;
+}
+
+func [[0]] TEST (in [[0]] out [[0]] bweight [[0]]) {
+  array test [0 0 0];
+  array weight [0 0 0];
+
+  for i = 0, i < 3
+    weight[i] = bweight[0][i];
+  
+  test = ZERO(EXP(NEGATE(DOT(in, bweight))));
+  weight = ADDM(weight, MULTM(MULTM(DOT(in, SUBTEST(out, test)), test), DEC(test)));
+  
+  array nweight [[0 0 0]];
+  for i = 0, i < 3
+    nweight[0][i] = weight[i];
+
+  nweight;
+}
