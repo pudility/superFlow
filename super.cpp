@@ -68,6 +68,7 @@ static int mainLoop(Parser * &p) {
 
 int main(int argc, char* argv[]) {
   auto *p = new Parser(argv[1]);
+  p->BinaryOpporatorRank[':'] = 10;
   p->BinaryOpporatorRank['<'] = 10;
   p->BinaryOpporatorRank['+'] = 20;
   p->BinaryOpporatorRank['-'] = 20;

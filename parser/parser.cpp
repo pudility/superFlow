@@ -166,7 +166,8 @@ std::unique_ptr<AST> Parser::ParseBinaryOporatorRHS(int exprRank, std::unique_pt
   while (true) {
     int tokenRank = getTokenRank();
 
-    if (tokenRank < exprRank) return LHS;
+    if (!LHS) std::cout << "returning null LHS \n";
+    if (tokenRank < exprRank || currentToken == ';') return LHS;
 
     int binaryOpporator = currentToken;
     getNextToken(); // Now that we know what it is, move past it
@@ -180,6 +181,7 @@ std::unique_ptr<AST> Parser::ParseBinaryOporatorRHS(int exprRank, std::unique_pt
       if (!RHS) return nullptr;
     }
 
+    if (!LHS) std::cout << "made null LHS \n";
     LHS = llvm::make_unique<BinaryAST> (binaryOpporator, std::move(LHS), std::move(RHS));
   }
 }

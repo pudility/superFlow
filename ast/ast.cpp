@@ -55,7 +55,7 @@ Value *NumberAST::codeGen() {
 Value *VariableAST::codeGen() {
   Value *v = namedValues[name];
 
-  if (!v) Parser::LogErrorV((std::string("Unknown Variable Name: ") + name).c_str());
+  if (!v) return Parser::LogErrorV((std::string("Unknown Variable Name: ") + name).c_str());
 
   return mBuilder.CreateLoad(v, name.c_str()); // Its okay to rutun v even if it is a nullptr - that will just bubble up the error
 }
@@ -149,10 +149,15 @@ Value *ArrayElementSetAST::codeGen() {
 }
 
 Value *BinaryAST::codeGen() {
-  Value *L = LHS->codeGen();
-  Value *R = RHS->codeGen();
+  Value *L;
+  Value *R;
 
-  if (!L || !R) return nullptr;
+  if (option != ':') {
+    L = LHS->codeGen();
+    R = RHS->codeGen();
+
+    if (!L || !R) return nullptr;
+  }
 
   switch(option) {// TODO: Oporator, not option :P
     case '+': // TODO: these should be enums
@@ -166,6 +171,18 @@ Value *BinaryAST::codeGen() {
     case '<':
       L = mBuilder.CreateFCmpULT(L, R, "cmptmp");
       return mBuilder.CreateUIToFP(L, Type::getDoubleTy(mContext), "booltmp"); // Convertes the above comparison to a double (0.0 or 1.0)
+    case ':': { //TODO: move me elsewhere       
+      std::vector<std::unique_ptr<AST>> arguments;
+      arguments.push_back(std::move(LHS));
+      
+      const std::string RHSName = dynamic_cast<VariableAST *>(RHS.get())->name;
+      // if (!RHSName) return Parser::LogErrorV("Was not passed a function (could not get name)");
+
+      if (auto call = llvm::make_unique<CallAST>(RHSName, std::move(arguments)))
+        return call->codeGen();
+      else 
+        return Parser::LogErrorV("Was not passed a funtion");
+    }
     default:
       return Parser::LogErrorV("invalid binary oporator \n Oporator must be: (+, -, *, <)");
   }
@@ -180,7 +197,7 @@ Value *CallAST::codeGen() {
   std::vector<Value *> argsV;
   for (unsigned i = 0, e = arguments.size(); i != e; ++i) {
     argsV.push_back(arguments[i]->codeGen());
-    if (!argsV.back()) return nullptr;
+    if (!argsV.back()) return Parser::LogErrorV("Error generating arguments for function call");
   }
 
   return mBuilder.CreateCall(fCallee, argsV, "calltmp");

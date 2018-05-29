@@ -3,3 +3,4 @@ a.out
 out.*
 built
 *.ll
+a.out.dSYM/

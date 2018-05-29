@@ -82,9 +82,8 @@ class ArrayElementSetAST: public AST {
 };
 
 class VariableAST: public AST {
-  std::string name;
-
   public:
+  std::string name;
   VariableAST(const std::string &name): name(name) { }
   llvm::Value *codeGen() override;
 };
