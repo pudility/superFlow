@@ -14,3 +14,7 @@ extern "C" DLLEXPORT double printd(double X) {
   return 0;
 }
 
+extern "C" DLLEXPORT double printb(double x) {
+  std::cout << x << ": ---------------------" << std::endl;
+  return 0;
+}

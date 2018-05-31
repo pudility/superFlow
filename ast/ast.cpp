@@ -300,8 +300,9 @@ Value *ForAST::codeGen() {
   AllocaInst *oldVal = namedValues[varName];
   namedValues[varName] = alloca;
 
-  if (!body->codeGen())
-    return nullptr;
+  for (auto &bodyExpr: body)
+    if (!bodyExpr->codeGen())
+      return nullptr;
 
   Value *stepVal = nullptr;
   if (step) {

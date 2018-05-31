@@ -302,8 +302,10 @@ std::unique_ptr<AST> Parser::ParseFor() {
     if (!step) return nullptr;
   }
 
-  auto body = ParsePrimary();
-  if (!body) return nullptr;
+  std::vector<std::unique_ptr<AST>> body;
+  while (currentToken != ';')
+    if (auto bodyExpr = ParseExpression())
+      body.push_back(std::move(bodyExpr));
 
   return llvm::make_unique<ForAST> (idName, std::move(start), std::move(end), std::move(step), std::move(body));
 }
