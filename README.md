@@ -189,3 +189,16 @@ Simply use `#` to comment lines :)
 
 * Everything is passed by reference.
 * Functions are compiled before everything else, so you cannot use variables you define at the top level (this will be fixed soon)
+
+## TODO:
+
+- [ ] Makefile
+- [ ] Unit tests
+- [ ] Split lexer and file parser
+- [ ] Any size Arrays
+- [ ] Implement eigen? Otherwise fix [this](https://stackoverflow.com/questions/50648553/clang-takes-very-long-time-to-compile-llvm-ir-large-arrays)
+- [ ] Binop for arrays
+- [ ] Make arrays more dynamic (do stuff with any size arrays, lenght, methods: map, foreach)
+- [ ] Implement methods for doing stuff with arrays (DOT, EXP, ect)
+- [ ] If statemnts
+- [ ] Better `run.sh` file
