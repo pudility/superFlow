@@ -43,7 +43,7 @@ fi
 if [ -n "$optrun" ] || [ -n "$optall" ] || [ -n "$opt2" ]; then
   echo "running... "
 
-  $SUPERFLOW_DIR/built
+  $SUPERFLOW_DIR/built | xargs echo # make sure that it can be read when we spawn this file as the cild processes
 fi
 
 if [ -n "$opti" ]; then
