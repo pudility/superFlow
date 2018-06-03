@@ -23,8 +23,9 @@ std::string exec(const char* cmd) {
   return result;
 }
 
-TEST(Basic, Computation) {
-	std::string output = exec("../run.sh $SUPERFLOW_DIR/test/scripts/basic/comp 2");
+std::string run(const char* file) {
+	std::string output = 
+    exec((std::string("../run.sh $SUPERFLOW_DIR/test/scripts/") + std::string(file) + std::string(" 2")).c_str());
   std::string line;
   std::string lastLine;
 
@@ -35,7 +36,51 @@ TEST(Basic, Computation) {
       line = lastLine;
   }
 
+  return line;
+}
+
+TEST(Basic, Computation) {
+  std::string line = run("basic/comp");
+
   EXPECT_EQ(line, "2700.000000");
+}
+
+
+TEST(Basic, ArrayCreationElementAccess) {
+  std::string line = run("basic/array");
+
+  EXPECT_EQ(line, "1.000000");
+}
+
+TEST(Basic, ArrayElementSet) {
+  std::string line = run("basic/arraySet");
+
+  EXPECT_EQ(line, "2.000000");
+}
+
+TEST(Loops, BasicFor) {
+  std::string line = run("loops/for");
+
+  EXPECT_EQ(line, "10.000000");
+}
+
+TEST(Loops, ForStep) {
+  std::string line = run("loops/forStep");
+
+  EXPECT_EQ(line, "460.000000");
+}
+
+
+TEST(Loops, ForMultiple) {
+  std::string line = run("loops/forMulti");
+
+  EXPECT_EQ(line, "1.000000");
+}
+
+TEST(Loops, ForArraySetGet) {
+  std::string line = run("loops/forArray");
+
+  EXPECT_EQ(line, "9.000000");
 }
 
 int main (int argc, char* argv[]) {

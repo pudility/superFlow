@@ -1,0 +1,6 @@
+extern 0 printd(x 0);
+
+array foo [0 0 0];
+foo[1] = (2 + 2)/2;
+
+printd(foo[1]);

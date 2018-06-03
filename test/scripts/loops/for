@@ -1,0 +1,9 @@
+extern 0 printd(x 0);
+
+var foo 1;
+
+for i = 0, i < 11
+  foo = i
+  ;
+
+printd(foo);

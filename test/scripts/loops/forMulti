@@ -1,0 +1,13 @@
+extern 0 printd(x 0);
+
+var foo 1;
+var bar 1;
+var nFoo 1;
+
+for i = 0, i < 11
+  bar = i
+  nFoo = foo + (bar - bar)
+  foo = nFoo
+  ;
+
+printd(foo);
