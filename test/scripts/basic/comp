@@ -1,0 +1,11 @@
+extern 0 printd(x 0);
+
+var foo 10;
+foo = foo + 1;
+foo = foo * 100;
+foo = foo / 10;
+foo = foo - 2;
+
+foo = foo * (100 - 50) / 2;
+
+printd(foo);

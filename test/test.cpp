@@ -23,8 +23,8 @@ std::string exec(const char* cmd) {
   return result;
 }
 
-TEST(basicComputation, Addition) {
-	std::string output = exec("../run.sh $SUPERFLOW_DIR/tmp/simple.spr 2");
+TEST(Basic, Computation) {
+	std::string output = exec("../run.sh $SUPERFLOW_DIR/test/scripts/basic/comp 2");
   std::string line;
   std::string lastLine;
 
@@ -35,7 +35,7 @@ TEST(basicComputation, Addition) {
       line = lastLine;
   }
 
-  EXPECT_EQ(line, "11.000000");
+  EXPECT_EQ(line, "2700.000000");
 }
 
 int main (int argc, char* argv[]) {

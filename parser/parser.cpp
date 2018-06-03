@@ -59,7 +59,7 @@ std::unique_ptr<AST> Parser::ParseArray(std::string name) {
   std::vector<std::unique_ptr<AST>> numbers;
 
   while (currentToken != ']')
-    numbers.push_back(ParsePrimary());
+    numbers.push_back(ParseExpression());
   
   getNextToken(); // Move over `]`
 
@@ -76,14 +76,14 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
       std::vector<std::unique_ptr<AST>> valIndexs;
       while (currentToken == '[') {
         getNextToken(); // Move past `[`
-        valIndexs.push_back(ParsePrimary());
+        valIndexs.push_back(ParseExpression());
         // getNextToken(); //  move past index      
         getNextToken(); // move past `]`
       }
 
       if (currentToken == '=') {
         getNextToken(); // Move past `=`
-				return llvm::make_unique<ArrayElementSetAST>(idName, std::move(valIndexs), ParsePrimary()); //TODO: parseexpression might be better for this and setvarast
+				return llvm::make_unique<ArrayElementSetAST>(idName, std::move(valIndexs), ParseExpression()); //TODO: parseexpression might be better for this and setvarast
       }
       
       return llvm::make_unique<ArrayElementAST>(idName, std::move(valIndexs));
@@ -91,7 +91,7 @@ std::unique_ptr<AST> Parser::ParseIdentifier() {
     
     if (currentToken == '=') {
       getNextToken(); // Move past `=`
-      return llvm::make_unique<VariableSetAST>(idName, ParsePrimary()); // return a set variable call
+      return llvm::make_unique<VariableSetAST>(idName, ParseExpression()); // return a set variable call
     }
     return llvm::make_unique<VariableAST>(idName); // otherwise return a variable
   }
@@ -221,7 +221,7 @@ std::unique_ptr<BaseFuncAST> Parser::ParseDefinition() {
     getNextToken(); // Move past `{`
 
     while (currentToken != '}') {
-      if (auto expr = ParsePrimary())
+      if (auto expr = ParseExpression())
         expresssions.push_back(std::move(expr));
       getNextToken();
     }
@@ -302,7 +302,7 @@ std::unique_ptr<AST> Parser::ParseFor() {
     if (!step) return nullptr;
   }
 
-  auto body = ParsePrimary();
+  auto body = ParseExpression();
   if (!body) return nullptr;
 
   return llvm::make_unique<ForAST> (idName, std::move(start), std::move(end), std::move(step), std::move(body));
