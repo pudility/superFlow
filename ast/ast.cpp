@@ -18,6 +18,7 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/DataLayout.h"
 
 using namespace llvm;
 
@@ -40,6 +41,8 @@ static AllocaInst *entryCreateBlockAllocaType(Function *func, std::string name, 
 static Value *DoubleToInt (Value *doubleVal) {
   return mBuilder.CreateFPToUI(doubleVal, mBuilder.getInt32Ty());
 }
+
+static std::map<Type *, bool> mallocExterns;
 
 static ArrayRef<Value *> PrefixZero (Value *index) {
   std::vector<Value *> out;
@@ -83,6 +86,12 @@ Value *VarAST::codeGen() {
     initVal = (type == VarType::type_double) ? Constant::getNullValue(dType) : Constant::getNullValue(aType);
   }
 
+  if (type == VarType::type_array) {
+    if (mallocExterns.find(initVal->getType()) == mallocExterns.end()) { // we have not externalized this method yet
+      mallocExterns[initVal->getType()] = true;
+    }
+  }
+
   AllocaInst *alloca = entryCreateBlockAllocaType(func, name, initVal->getType());
   namedValues[name] = alloca;
 
@@ -92,8 +101,16 @@ Value *VarAST::codeGen() {
 Value *ArrayAST::codeGen() {
   Value *emptyVector = UndefValue::get(ArrayTypeForType(numbers[0]->codeGen()->getType()));
   
+  DataLayout *DL = new DataLayout (M);
+  // We pass malloc a single arg but it needs to be a vector
+  std::vector<Value *> varAsArg = { 
+    ConstantFP::get(dType, DL->getTypeSizeInBits(emptyVector->getType()))
+  }; 
+  VCallAST *calledMalloc = new VCallAST("malloc", varAsArg);
+  auto calledMallocVal = calledMalloc->codeGen();
+
   std::vector<Value *> numberValues;
-  Instruction *fullVector = InsertValueInst::Create(emptyVector, numbers[0]->codeGen(), 0);
+  Instruction *fullVector = InsertValueInst::Create(calledMallocVal, numbers[0]->codeGen(), 0);
   mBuilder.Insert(fullVector);
 
   int i = 0;
@@ -185,6 +202,16 @@ Value *CallAST::codeGen() {
   }
 
   return mBuilder.CreateCall(fCallee, argsV, "calltmp");
+}
+
+Value *VCallAST::codeGen() {
+  Function *fCallee = mModule->getFunction(callee);
+  if (!fCallee) return Parser::LogErrorV((std::string("Unknown Function: ") + callee).c_str());
+
+  if (fCallee->arg_size() != arguments.size()) 
+    return Parser::LogErrorV((std::string("Incorrect # arguments passed to funtion: ") + callee).c_str());
+
+  return mBuilder.CreateCall(fCallee, arguments, "calltmp");
 }
 
 Function *PrototypeAST::codeGen() {

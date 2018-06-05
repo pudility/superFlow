@@ -129,6 +129,16 @@ class CallAST: public AST {
   llvm::Value *codeGen() override;
 };
 
+class VCallAST: public AST {
+  std::string callee;
+  std::vector<Value *> arguments;
+  
+  public:
+  VCallAST(const std::string &callee, std::vector<Value *> arguments): 
+    callee(callee), arguments(std::move(arguments)) { }
+  llvm::Value *codeGen() override;
+};
+
 class PrototypeAST {
   std::string name;
   std::vector<std::pair<std::string, Type*>> arguments;
