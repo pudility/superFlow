@@ -3,19 +3,27 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <map>
+
+class PreLex {
+  public:
+  PreLex(std::map<std::string, int> arrays): arrays(arrays) { }
+  std::map<std::string, int> arrays; // this is an array of every array we make and the number of times we use it (so we know when to get rid of it)
+};
 
 class Lexer {
   private:
   std::fstream ifs;
+  std::string fileName;
 
 	public:
-  Lexer(std::string fileName): ifs(fileName, std::ifstream::in) { }
+  Lexer(std::string fileName): ifs(fileName, std::ifstream::in), fileName(fileName) { }
 	int getToken ();
+  PreLex *runPreLexer ();
   
   std::string identifier;
   double value;
 };
-
 
 enum Token {
   token_eof = -1,

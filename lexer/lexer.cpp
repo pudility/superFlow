@@ -15,6 +15,27 @@ bool isoporator (char opp) {
   return opp == '+' || opp == '-' || opp == '*' || opp == '<' || opp == '/';
 }
 
+PreLex *Lexer::runPreLexer () {
+  Lexer *mLexer = new Lexer(fileName);
+
+  std::map<std::string, int> arrays;
+  int currentToken = 0;
+  while (currentToken != token_eof) {
+    currentToken = mLexer->getToken(); 
+
+    if (currentToken == token_array) {
+      getToken(); // move past array
+      arrays[mLexer->identifier] = 0;
+    }
+
+    if (currentToken == token_id)
+      if (arrays.find(mLexer->identifier) != arrays.end())
+        arrays[mLexer->identifier]++;
+  }
+
+  return new PreLex(arrays);
+}
+
 int Lexer::getToken () {
   static int lastChar = ' ';
 
