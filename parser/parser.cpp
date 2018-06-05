@@ -260,6 +260,8 @@ std::unique_ptr<AST> Parser::ParseVariable(VarType type) { //TODO: type does not
   getNextToken(); // Move over `var`
 
   const std::string idName = mLexer->identifier;
+  int timesUsed = 0;
+  if (mPreLex->arrays.find(idName) != mPreLex->arrays.end()) timesUsed = mPreLex->arrays[idName];
   
   getNextToken();
   

@@ -14,10 +14,12 @@
 class Parser {
   private:
     Lexer *mLexer; 
+    PreLex *mPreLex;
 
   public:
     Parser(char* fileName) {
       mLexer = new Lexer(std::string(fileName));
+      mPreLex = mLexer->runPreLexer();
     }
 
     // annon stuff:

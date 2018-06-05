@@ -23,14 +23,14 @@ PreLex *Lexer::runPreLexer () {
   while (currentToken != token_eof) {
     currentToken = mLexer->getToken(); 
 
-    if (currentToken == token_array) {
-      getToken(); // move past array
-      arrays[mLexer->identifier] = 0;
-    }
-
-    if (currentToken == token_id)
-      if (arrays.find(mLexer->identifier) != arrays.end())
-        arrays[mLexer->identifier]++;
+//    if (currentToken == token_array) {
+//      getToken(); // move past array
+//      arrays[mLexer->identifier] = 0;
+//    }
+//
+//    if (currentToken == token_id)
+//      if (arrays.find(mLexer->identifier) != arrays.end())
+//        arrays[mLexer->identifier]++;
   }
 
   return new PreLex(arrays);

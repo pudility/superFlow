@@ -18,6 +18,7 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/DataLayout.h"
 
 using namespace llvm;
 
@@ -72,7 +73,7 @@ Value *VarAST::codeGen() {
   Function *func = mBuilder.GetInsertBlock()->getParent();
   
   std::string name = var.first;
-  
+
   AST *init = var.second.get();
 
   Value *initVal;
@@ -83,8 +84,14 @@ Value *VarAST::codeGen() {
     initVal = (type == VarType::type_double) ? Constant::getNullValue(dType) : Constant::getNullValue(aType);
   }
 
-  AllocaInst *alloca = entryCreateBlockAllocaType(func, name, initVal->getType());
-  namedValues[name] = alloca;
+  Value *alloca;
+  if (type == VarType::type_array) {
+    Type *valType = initVal->getType();
+    Constant *allocSize = ConstantExpr::getSizeOf(valType);
+    allocSize = ConstantExpr::getTruncOrBitCast(allocSize, dType);
+    alloca = CallInst::CreateMalloc(mBuilder.GetInsertBlock(), dType, valType, allocSize, nullptr, nullptr, "");
+  } else alloca = entryCreateBlockAllocaType(func, name, initVal->getType());
+  namedValues[name] = dyn_cast<AllocaInst>(alloca);
 
   return mBuilder.CreateStore(initVal, alloca);
 }
