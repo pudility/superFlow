@@ -23,7 +23,7 @@
 using namespace llvm;
 
 static Type *ArrayTypeForType(Type *type) {
-  return ArrayType::get(type, 4);
+  return ArrayType::get(type, tArraySize);
 }
 
 static AllocaInst *entryCreateBlockAlloca(Function *func, std::string name) {
@@ -100,14 +100,15 @@ Value *VarAST::codeGen() {
 
 Value *ArrayAST::codeGen() {
   Value *emptyVector = UndefValue::get(ArrayTypeForType(numbers[0]->codeGen()->getType()));
-  
+
   DataLayout *DL = new DataLayout (M);
   // We pass malloc a single arg but it needs to be a vector
   std::vector<Value *> varAsArg = { 
-    ConstantFP::get(dType, DL->getTypeSizeInBits(emptyVector->getType()))
+    ConstantInt::get(iType, DL->getTypeSizeInBits(emptyVector->getType()))
   }; 
   VCallAST *calledMalloc = new VCallAST("malloc", varAsArg);
-  auto calledMallocVal = calledMalloc->codeGen();
+  Value *calledMallocVal = calledMalloc->codeGen();
+  calledMallocVal = mBuilder.CreateLoad(calledMallocVal, "array_from_alloca");
 
   std::vector<Value *> numberValues;
   Instruction *fullVector = InsertValueInst::Create(calledMallocVal, numbers[0]->codeGen(), 0);
@@ -218,7 +219,7 @@ Function *PrototypeAST::codeGen() {
   std::vector<Type*> doubles;
   for (auto &arg: arguments)
     doubles.push_back(arg.second);
-  
+ 
   FunctionType *FT = FunctionType::get(type, doubles, false);
   Function *f = Function::Create(FT, Function::ExternalLinkage, name, M);
 

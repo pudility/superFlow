@@ -22,13 +22,15 @@
 
 using namespace llvm;
 
+static int tArraySize = 4000;
 static LLVMContext mContext;
 static IRBuilder<> mBuilder(mContext);
 static std::unique_ptr<Module> mModule = make_unique<Module>("Super", mContext);
 static std::map<std::string, AllocaInst *> namedValues;
 static Module *M = mModule.get();
 static Type *dType = Type::getDoubleTy(mContext);
-static Type *aType = ArrayType::get(dType, 4); // TODO: implemnt x length
+static Type *iType = Type::getInt64Ty(mContext);
+static Type *aType = ArrayType::get(dType, tArraySize); // TODO: implemnt x length
 static Value *nullValue = Constant::getNullValue(dType);
 
 class AST {

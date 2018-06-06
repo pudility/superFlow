@@ -62,9 +62,10 @@ static std::string externMalloc() {
   raw_string_ostream OS(IR);
 
   std::vector<std::pair<std::string, llvm::Type *>> argNames;
-  argNames.push_back(std::make_pair("x", dType));
+  argNames.push_back(std::make_pair("x", iType));
 
-  auto mallocProto = llvm::make_unique<PrototypeAST>("malloc", std::move(argNames), aType);
+  PointerType *pAType = PointerType::getUnqual(aType);
+  auto mallocProto = llvm::make_unique<PrototypeAST>("malloc", std::move(argNames), std::move(pAType));
   if (auto *etrnIR = mallocProto->codeGen())
     etrnIR->print(OS);
 
