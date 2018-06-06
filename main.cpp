@@ -14,6 +14,8 @@
 #include <vector>
 #include <iostream>
 
+bool DEBUT_ENABLED = false;
+
 static std::string handleFunc(Parser * &p) {
   std::string IR;
   raw_string_ostream OS(IR);
@@ -24,6 +26,7 @@ static std::string handleFunc(Parser * &p) {
   } else
     std::cerr << "Error - failed to parse definition" << std::endl;
 
+  if (DEBUT_ENABLED) std::cout << IR << std::endl;
   return IR;
 }
 
@@ -37,6 +40,7 @@ static std::string loadTopLevel(Parser * &p) {
   } else
     std::cerr << "Error - failed to parse top level" << std::endl;
 
+  if (DEBUT_ENABLED) std::cout << IR << std::endl;
   return IR;
 }
 
@@ -54,6 +58,7 @@ static std::string handleExtern(Parser * &p) {
   } else
     std::cerr << "Error - failed to parse extern" << std::endl;
 
+  if (DEBUT_ENABLED) std::cout << IR << std::endl;
   return IR;
 }
 
@@ -69,6 +74,7 @@ static std::string externMalloc() {
   if (auto *etrnIR = mallocProto->codeGen())
     etrnIR->print(OS);
 
+  if (DEBUT_ENABLED) std::cout << IR << std::endl;
   return IR;
 }
 
