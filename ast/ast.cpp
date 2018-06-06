@@ -51,6 +51,13 @@ static ArrayRef<Value *> PrefixZero (Value *index) {
   return ArrayRef<Value *>(out);
 }
 
+static ArrayRef<Value *> ZeroZero () {
+  std::vector<Value *> out;
+  out.push_back(ConstantInt::get(mContext, APInt(32, 0)));
+  out.push_back(ConstantInt::get(mContext, APInt(32, 0)));
+  return ArrayRef<Value *>(out);
+}
+
 Value *NumberAST::codeGen() {
   return ConstantFP::get(mContext, APFloat(val));
 }
@@ -113,23 +120,20 @@ Value *ArrayAST::codeGen() {
   mBuilder.Insert(calledMallocValInst);
   calledMallocVal = calledMallocValInst;
 
-  calledMallocVal = mBuilder.CreateLoad(calledMallocVal, "array_from_alloca");
-
   std::vector<Value *> numberValues;
-  Instruction *fullVector = InsertValueInst::Create(calledMallocVal, numbers[0]->codeGen(), 0);
-  mBuilder.Insert(fullVector);
-
+  Value *fullVector = mBuilder.CreateGEP(calledMallocVal, ZeroZero());
+  mBuilder.CreateStore(numbers[0]->codeGen(), fullVector);
+  
   int i = 0;
-
   for(auto const& n: numbers) {
     if (i == 0) goto end; // We already did this one when we set fullVector
-    fullVector = InsertValueInst::Create(fullVector, n->codeGen(), i);
-    mBuilder.Insert(fullVector);
+    fullVector = mBuilder.CreateGEP(calledMallocVal, PrefixZero(DoubleToInt(n->codeGen())));
+    mBuilder.CreateStore(n->codeGen(), fullVector);
 end:;
     i++;
   }
   
-  return fullVector;
+  return mBuilder.CreateLoad(calledMallocVal, "initialized_array");
 }
 
 Value *ArrayElementAST::codeGen() {
@@ -161,8 +165,8 @@ Value *ArrayElementSetAST::codeGen() {
       extracts.push_back(newArray);
     }
 
-    std::reverse(extracts.begin(), extracts.end());
-    std::reverse(indexs.begin(), indexs.end());
+    std::reverse(extracts.begin(), extracts.end()); //TODO: there is no reason we need to do this
+    std::reverse(indexs.begin(), indexs.end()); //TODO: or this
   }
   
   mBuilder.CreateStore(newVal->codeGen(), extracts[0]);
