@@ -93,12 +93,6 @@ Value *VarAST::codeGen() {
     initVal = (type == VarType::type_double) ? Constant::getNullValue(dType) : Constant::getNullValue(aType);
   }
 
-  // if (type == VarType::type_array) {
-  //   if (mallocExterns.find(initVal->getType()) == mallocExterns.end()) { // we have not externalized this method yet
-  //     mallocExterns[initVal->getType()] = true;
-  //   }
-  // }
-
   AllocaInst *alloca = entryCreateBlockAllocaType(func, name, initVal->getType());
   namedValues[name] = alloca;
 
@@ -107,7 +101,7 @@ Value *VarAST::codeGen() {
 
 Value *ArrayAST::codeGen() {
   Value *emptyVector = UndefValue::get(ArrayTypeForType(numbers[0]->codeGen()->getType()));
-  return emptyVector;
+  return emptyVector; //TODO: this does not init arrays but it works so we will need to figure out what we want to do here.
 
   DataLayout *DL = new DataLayout (M);
   // We pass malloc a single arg but it needs to be a vector
