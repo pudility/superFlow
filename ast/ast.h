@@ -22,7 +22,7 @@
 
 using namespace llvm;
 
-static int tArraySize = 4000;
+static int tArraySize = 400;
 static LLVMContext mContext;
 static IRBuilder<> mBuilder(mContext);
 static std::unique_ptr<Module> mModule = make_unique<Module>("Super", mContext);
@@ -30,6 +30,8 @@ static std::map<std::string, AllocaInst *> namedValues;
 static Module *M = mModule.get();
 static Type *dType = Type::getDoubleTy(mContext);
 static Type *iType = Type::getInt64Ty(mContext);
+static Type *i8Type = Type::getInt8Ty(mContext);
+static PointerType *pI8Type = PointerType::getUnqual(i8Type);
 static Type *aType = ArrayType::get(dType, tArraySize); // TODO: implemnt x length
 static Value *nullValue = Constant::getNullValue(dType);
 

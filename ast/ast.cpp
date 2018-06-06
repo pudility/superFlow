@@ -108,6 +108,11 @@ Value *ArrayAST::codeGen() {
   }; 
   VCallAST *calledMalloc = new VCallAST("malloc", varAsArg);
   Value *calledMallocVal = calledMalloc->codeGen();
+ 
+  Instruction* calledMallocValInst = new BitCastInst(calledMallocVal, PointerType::getUnqual(emptyVector->getType()));
+  mBuilder.Insert(calledMallocValInst);
+  calledMallocVal = calledMallocValInst;
+
   calledMallocVal = mBuilder.CreateLoad(calledMallocVal, "array_from_alloca");
 
   std::vector<Value *> numberValues;
@@ -129,7 +134,7 @@ end:;
 
 Value *ArrayElementAST::codeGen() {
   AllocaInst *alloca = namedValues[name];
-
+  
   // We have to use an instruction so we can pass variables as index
   Value *newArray = mBuilder.CreateGEP(alloca, PrefixZero(DoubleToInt(indexs[0]->codeGen())));
   for (unsigned i = 1; i < indexs.size(); i++) {
@@ -144,10 +149,8 @@ Value *ArrayElementSetAST::codeGen() {
   AllocaInst *alloca = namedValues[name];
   
   std::vector<Value *> extracts;
-  
   if (indexs.size() > 0) {
-    Value *newArray = 
-      mBuilder.CreateGEP(alloca, PrefixZero(DoubleToInt(indexs[0]->codeGen())));
+    Value *newArray = mBuilder.CreateGEP(alloca, PrefixZero(DoubleToInt(indexs[0]->codeGen())));
     extracts.push_back(newArray);
 
     for (unsigned i = 1; i < indexs.size(); i++) {

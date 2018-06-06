@@ -69,8 +69,7 @@ static std::string externMalloc() {
   std::vector<std::pair<std::string, llvm::Type *>> argNames;
   argNames.push_back(std::make_pair("x", iType));
 
-  PointerType *pAType = PointerType::getUnqual(aType);
-  auto mallocProto = llvm::make_unique<PrototypeAST>("malloc", std::move(argNames), std::move(pAType));
+  auto *mallocProto = new PrototypeAST("malloc", std::move(argNames), pI8Type);
   if (auto *etrnIR = mallocProto->codeGen())
     etrnIR->print(OS);
 
@@ -127,7 +126,7 @@ static std::string run(char* argv[]) {
     IR += std::string("  call double @__anon_expr") + std::to_string(i) + " ()\n";
   IR += std::string("  ret i32 0 \n} \n");
 
-  delete p;
+//  delete p;
 
   return IR;
 }
