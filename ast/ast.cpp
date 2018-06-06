@@ -93,20 +93,21 @@ Value *VarAST::codeGen() {
     initVal = (type == VarType::type_double) ? Constant::getNullValue(dType) : Constant::getNullValue(aType);
   }
 
-  if (type == VarType::type_array) {
-    if (mallocExterns.find(initVal->getType()) == mallocExterns.end()) { // we have not externalized this method yet
-      mallocExterns[initVal->getType()] = true;
-    }
-  }
+  // if (type == VarType::type_array) {
+  //   if (mallocExterns.find(initVal->getType()) == mallocExterns.end()) { // we have not externalized this method yet
+  //     mallocExterns[initVal->getType()] = true;
+  //   }
+  // }
 
   AllocaInst *alloca = entryCreateBlockAllocaType(func, name, initVal->getType());
   namedValues[name] = alloca;
 
-  return mBuilder.CreateStore(initVal, alloca);
+  return alloca;
 }
 
 Value *ArrayAST::codeGen() {
   Value *emptyVector = UndefValue::get(ArrayTypeForType(numbers[0]->codeGen()->getType()));
+  return emptyVector;
 
   DataLayout *DL = new DataLayout (M);
   // We pass malloc a single arg but it needs to be a vector
@@ -115,10 +116,11 @@ Value *ArrayAST::codeGen() {
   }; 
   VCallAST *calledMalloc = new VCallAST("malloc", varAsArg);
   Value *calledMallocVal = calledMalloc->codeGen();
- 
+  
   Instruction* calledMallocValInst = new BitCastInst(calledMallocVal, PointerType::getUnqual(emptyVector->getType()));
   mBuilder.Insert(calledMallocValInst);
   calledMallocVal = calledMallocValInst;
+
 
   std::vector<Value *> numberValues;
   Value *fullVector = mBuilder.CreateGEP(calledMallocVal, ZeroZero());
