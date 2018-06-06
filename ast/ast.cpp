@@ -257,7 +257,21 @@ Function *FuncAST::codeGen() {
   }
 
   if (Value *returnValue = body->codeGen()) {
-    mBuilder.CreateRet(returnValue);
+    DataLayout *DL = new DataLayout (M);
+    // We pass malloc a single arg but it needs to be a vector
+    std::vector<Value *> varAsArg = { 
+      ConstantInt::get(iType, DL->getTypeSizeInBits(returnValue->getType()))
+    }; 
+    VCallAST *calledMalloc = new VCallAST("malloc", varAsArg);
+    Value *mallocOfReturn = calledMalloc->codeGen();
+
+    Instruction* calledMallocValInst = new BitCastInst(mallocOfReturn, PointerType::getUnqual(returnValue->getType()));
+    mBuilder.Insert(calledMallocValInst);
+    mallocOfReturn = calledMallocValInst;
+
+    StoreInst *storedReturn = new StoreInst(returnValue, mallocOfReturn, block);
+
+    mBuilder.CreateRet(storedReturn->getPointerOperand()); //we want a pointer of the return value, not the return value
 
     llvm::verifyFunction(*func);
 
@@ -294,14 +308,22 @@ Function *LongFuncAST::codeGen() {
     mBuilder.Insert(exprConst);
   }
 
-  if (auto retValue = body[body.size() - 1]->codeGen()) { // TODO: make a return for null value if this is null
-    mBuilder.CreateRet(retValue); // TODO: This should not matter, but we might want to change this to exprValue
+  if (Value *returnValue = body[body.size() - 1]->codeGen()) {
+    DataLayout *DL = new DataLayout (M);
+    // We pass malloc a single arg but it needs to be a vector
+    std::vector<Value *> varAsArg = { 
+      ConstantInt::get(iType, DL->getTypeSizeInBits(returnValue->getType()))
+    }; 
+    VCallAST *calledMalloc = new VCallAST("malloc", varAsArg);
+    Value *mallocOfReturn = calledMalloc->codeGen();
 
-    llvm::verifyFunction(*func);
+    Instruction* calledMallocValInst = new BitCastInst(mallocOfReturn, PointerType::getUnqual(returnValue->getType()));
+    mBuilder.Insert(calledMallocValInst);
+    mallocOfReturn = calledMallocValInst;
 
-    return func;
-  } else {
-    mBuilder.CreateRet(Constant::getNullValue(dType));
+    StoreInst *storedReturn = new StoreInst(returnValue, mallocOfReturn, block);
+
+    mBuilder.CreateRet(storedReturn->getPointerOperand()); //we want a pointer of the return value, not the return value
 
     llvm::verifyFunction(*func);
 
