@@ -37,7 +37,7 @@ if [ -n "$optcomp" ] || [ -n "$optall" ] || [ -n "$opt2" ]; then
   less $1 >> $SUPERFLOW_DIR/tmp/out.spr
   $SUPERFLOW_DIR/a.out $SUPERFLOW_DIR/tmp/out.spr &> $SUPERFLOW_DIR/out.ll
 
-  clang++ $SUPERFLOW_DIR/library/library.cpp $SUPERFLOW_DIR/out.ll -o $SUPERFLOW_DIR/built -j4
+  clang++ $SUPERFLOW_DIR/library/library.cpp $SUPERFLOW_DIR/out.ll -o $SUPERFLOW_DIR/built
 fi
 
 if [ -n "$optrun" ] || [ -n "$optall" ] || [ -n "$opt2" ]; then
