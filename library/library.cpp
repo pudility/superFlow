@@ -9,7 +9,9 @@
 using namespace std;
 
 /// printd - printf that takes a double prints it as "%f\n", returning 0.
-extern "C" DLLEXPORT double printd(double X) {
+extern "C" DLLEXPORT double *printd(double X) {
   fprintf(stderr, "%f\n", X);
-  return 0;
+  double *retval malloc(sizeof(double));
+  *retval = 0;
+  return retval;
 }

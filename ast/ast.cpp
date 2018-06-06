@@ -223,7 +223,7 @@ Function *PrototypeAST::codeGen() {
   for (auto &arg: arguments)
     doubles.push_back(arg.second);
  
-  FunctionType *FT = FunctionType::get(type, doubles, false);
+  FunctionType *FT = FunctionType::get(PointerType::getUnqual(type), doubles, false);
   Function *f = Function::Create(FT, Function::ExternalLinkage, name, M);
 
   unsigned index = 0;
