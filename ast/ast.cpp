@@ -299,13 +299,24 @@ Function *FuncAST::codeGen() {
     VCallAST *calledMalloc = new VCallAST("malloc", varAsArg);
     Value *mallocOfReturn = calledMalloc->codeGen();
 
-    Instruction* calledMallocValInst = new BitCastInst(mallocOfReturn, PointerType::getUnqual(returnValue->getType()));
-    mBuilder.Insert(calledMallocValInst);
-    mallocOfReturn = calledMallocValInst;
+    std::vector<Value *> loadedGEPS;
 
-    StoreInst *storedReturn = new StoreInst(returnValue, mallocOfReturn, block);
+    loadedGEPS.push_back(mallocOfReturn);
+    while (dyn_cast<ArrayType>(mallocOfReturn->getType())) {
+      mallocOfReturn = mBuilder.CreateGEP(mallocOfReturn, ZeroZero()); //TODO: this NEEDS to happen for EVERY element
+      loadedGEPS.push_back(mallocOfReturn);
+    }
 
-    mBuilder.CreateRet(storedReturn->getPointerOperand()); //we want a pointer of the return value, not the return value
+    unsigned i = 0;
+    for (auto *g: loadedGEPS) {
+      if (i == 0) goto end;
+      mallocOfReturn = mBuilder.CreateLoad(mallocOfReturn, "retval_pointee");
+      mallocOfReturn = mBuilder.CreateStore(mallocOfReturn, g);
+  end:;
+      i++; 
+    }
+
+    mBuilder.CreateRet(mallocOfReturn); //we want a pointer of the return value, not the return value
 
     llvm::verifyFunction(*func);
 
@@ -351,13 +362,39 @@ Function *LongFuncAST::codeGen() {
     VCallAST *calledMalloc = new VCallAST("malloc", varAsArg);
     Value *mallocOfReturn = calledMalloc->codeGen();
 
-    Instruction* calledMallocValInst = new BitCastInst(mallocOfReturn, PointerType::getUnqual(returnValue->getType()));
+    Type *type = returnValue->getType();
+    std::vector<Type *> nestedArrayTypes; //TODO: this does not need to be of type `Type` could just be an int
+    while (ArrayType *arrayForType = dyn_cast<ArrayType>(type)) {
+      nestedArrayTypes.push_back(PointerType::getUnqual(type));
+      type = arrayForType->getElementType();
+    }
+
+    for (auto *t: nestedArrayTypes)
+      type = ArrayPointerForType(type);
+
+    Instruction* calledMallocValInst = new BitCastInst(mallocOfReturn, type);
     mBuilder.Insert(calledMallocValInst);
     mallocOfReturn = calledMallocValInst;
 
-    StoreInst *storedReturn = new StoreInst(returnValue, mallocOfReturn, block);
+    std::vector<Value *> loadedGEPS;
 
-    mBuilder.CreateRet(storedReturn->getPointerOperand()); //we want a pointer of the return value, not the return value
+    loadedGEPS.push_back(mallocOfReturn);
+    while (dyn_cast<ArrayType>(mallocOfReturn->getType())) {
+      std::cout << "could convert to array \n";
+      mallocOfReturn = mBuilder.CreateGEP(mallocOfReturn, ZeroZero()); //TODO: this NEEDS to happen for EVERY element
+      loadedGEPS.push_back(mallocOfReturn);
+    }
+
+    unsigned i = 0;
+    for (auto *g: loadedGEPS) {
+      if (i == 0) goto end;
+      mallocOfReturn = mBuilder.CreateLoad(mallocOfReturn, "retval_pointee");
+      mallocOfReturn = mBuilder.CreateStore(mallocOfReturn, g);
+  end:;
+      i++; 
+    }
+
+    mBuilder.CreateRet(mallocOfReturn); //we want a pointer of the return value, not the return value
 
     llvm::verifyFunction(*func);
 

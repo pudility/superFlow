@@ -69,7 +69,7 @@ static std::string externMalloc() {
   std::vector<std::pair<std::string, llvm::Type *>> argNames;
   argNames.push_back(std::make_pair("x", iType));
 
-  auto *mallocProto = new PrototypeAST("malloc", std::move(argNames), i8Type);
+  auto *mallocProto = new PrototypeAST("malloc", std::move(argNames), pI8Type);
   if (auto *etrnIR = mallocProto->codeGen())
     etrnIR->print(OS);
 
