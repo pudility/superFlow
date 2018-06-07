@@ -26,6 +26,10 @@ static Type *ArrayTypeForType(Type *type) {
   return ArrayType::get(type, tArraySize);
 }
 
+static Type *ArrayPointerForType(Type *type) {
+  return PointerType::getUnqual(ArrayType::get(type, tArraySize));
+}
+
 static AllocaInst *entryCreateBlockAlloca(Function *func, std::string name) {
   IRBuilder<> tmpBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
   return tmpBuilder.CreateAlloca(dType, nullptr, name);
@@ -205,7 +209,27 @@ Value *CallAST::codeGen() {
     if (!argsV.back()) return nullptr;
   }
 
-  return mBuilder.CreateCall(fCallee, argsV, "calltmp");
+  // we want to convert any return values form functions from pointers to their types (the only pointer we want to reutrn is from malloc and will be handled below)
+
+  std::vector<Value *> loadedGEPS;
+  Value *pCallValue = mBuilder.CreateCall(fCallee, argsV, "calltmp");
+
+  loadedGEPS.push_back(pCallValue);
+  while (dyn_cast<ArrayType>(pCallValue->getType())) {
+    pCallValue = mBuilder.CreateGEP(pCallValue, ZeroZero()); //TODO: this NEEDS to happen for EVERY element
+    loadedGEPS.push_back(pCallValue);
+  }
+
+  unsigned i = 0;
+  for (auto *g: loadedGEPS) {
+    if (i == 0) goto end;
+    pCallValue = mBuilder.CreateLoad(pCallValue, "called_pointee");
+    pCallValue = mBuilder.CreateStore(pCallValue, g);
+end:;
+    i++; 
+  }
+
+  return pCallValue;
 }
 
 Value *VCallAST::codeGen() {
@@ -215,6 +239,7 @@ Value *VCallAST::codeGen() {
   if (fCallee->arg_size() != arguments.size()) 
     return Parser::LogErrorV((std::string("Incorrect # arguments passed to funtion: ") + callee).c_str());
 
+  // we do not want convert form a pointer here becuase the only way this class will be created is for malloc
   return mBuilder.CreateCall(fCallee, arguments, "calltmp");
 }
 
@@ -222,8 +247,17 @@ Function *PrototypeAST::codeGen() {
   std::vector<Type*> doubles;
   for (auto &arg: arguments)
     doubles.push_back(arg.second);
+
+  std::vector<Type *> nestedArrayTypes; //TODO: this does not need to be of type `Type` could just be an int
+  while (ArrayType *arrayForType = dyn_cast<ArrayType>(type)) {
+    nestedArrayTypes.push_back(PointerType::getUnqual(type));
+    type = arrayForType->getElementType();
+  }
+
+  for (auto *t: nestedArrayTypes)
+    type = ArrayPointerForType(type);
  
-  FunctionType *FT = FunctionType::get(PointerType::getUnqual(type), doubles, false);
+  FunctionType *FT = FunctionType::get(type, doubles, false);
   Function *f = Function::Create(FT, Function::ExternalLinkage, name, M);
 
   unsigned index = 0;
