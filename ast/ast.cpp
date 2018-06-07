@@ -301,10 +301,10 @@ Function *FuncAST::codeGen() {
 
     std::vector<Value *> loadedGEPS;
 
-    loadedGEPS.push_back(mallocOfReturn);
-    while (dyn_cast<ArrayType>(mallocOfReturn->getType())) {
-      mallocOfReturn = mBuilder.CreateGEP(mallocOfReturn, ZeroZero()); //TODO: this NEEDS to happen for EVERY element
-      loadedGEPS.push_back(mallocOfReturn);
+    loadedGEPS.push_back(returnValue);
+    while (dyn_cast<ArrayType>(returnValue->getType())) {
+      returnValue = mBuilder.CreateGEP(returnValue, ZeroZero()); //TODO: this NEEDS to happen for EVERY element
+      loadedGEPS.push_back(returnValue);
     }
 
     unsigned i = 0;
@@ -373,23 +373,39 @@ Function *LongFuncAST::codeGen() {
       type = ArrayPointerForType(type);
 
     Instruction* calledMallocValInst = new BitCastInst(mallocOfReturn, type);
-    mBuilder.Insert(calledMallocValInst);
-    mallocOfReturn = calledMallocValInst;
+    mallocOfReturn = mBuilder.Insert(calledMallocValInst);
 
     std::vector<Value *> loadedGEPS;
-
-    loadedGEPS.push_back(mallocOfReturn);
-    while (dyn_cast<ArrayType>(mallocOfReturn->getType())) {
-      std::cout << "could convert to array \n";
-      mallocOfReturn = mBuilder.CreateGEP(mallocOfReturn, ZeroZero()); //TODO: this NEEDS to happen for EVERY element
-      loadedGEPS.push_back(mallocOfReturn);
+    loadedGEPS.push_back(returnValue);
+    while (dyn_cast<ArrayType>(returnValue->getType())) {
+      returnValue = mBuilder.CreateGEP(returnValue, ZeroZero()); //TODO: this NEEDS to happen for EVERY element
+      loadedGEPS.push_back(returnValue);
     }
+
+    std::vector<Value *> loadedMallocs;
+    loadedMallocs.push_back(mallocOfReturn);
+    mallocOfReturn = mBuilder.CreateLoad(mallocOfReturn, "load_malloc");
+    while (dyn_cast<ArrayType>(mallocOfReturn->getType())) {
+      std::cout << "looping \n";
+      mallocOfReturn = mBuilder.CreateGEP(mallocOfReturn, ZeroZero()); //TODO: this NEEDS to happen for EVERY element
+      loadedMallocs.push_back(mallocOfReturn);
+      std::cout << "loopint (1) \n";
+      mallocOfReturn = mBuilder.CreateLoad(mallocOfReturn, "load_malloc");
+    }
+
+    std::cout << "Size GEPS: " << loadedGEPS.size() << " Size mallocs: " << loadedMallocs.size() << std::endl;
+
+    std::reverse(loadedGEPS.begin(), loadedGEPS.end());
+    std::reverse(loadedMallocs.begin(), loadedMallocs.end());
+
+    mallocOfReturn = mBuilder.CreateLoad(loadedGEPS[0], "retval_pointee");
+    mallocOfReturn = mBuilder.CreateStore(mallocOfReturn, loadedMallocs[0]);
 
     unsigned i = 0;
     for (auto *g: loadedGEPS) {
       if (i == 0) goto end;
-      mallocOfReturn = mBuilder.CreateLoad(mallocOfReturn, "retval_pointee");
-      mallocOfReturn = mBuilder.CreateStore(mallocOfReturn, g);
+      mallocOfReturn = mBuilder.CreateLoad(g, "retval_pointee");
+      mallocOfReturn = mBuilder.CreateStore(mallocOfReturn, loadedMallocs[i]);
   end:;
       i++; 
     }
