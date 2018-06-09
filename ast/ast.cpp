@@ -62,6 +62,56 @@ static ArrayRef<Value *> ZeroZero () {
   return ArrayRef<Value *>(out);
 }
 
+static Value *StoreAllElements(Value *newValue, Value *oldValue) {
+  Function *func = mBuilder.GetInsertBlock()->getParent();
+
+  AllocaInst *alloca = entryCreateBlockAlloca(func, "store_all_elements_counter");
+
+  mBuilder.CreateStore(ConstantFP::get(mContext, APFloat(0.0)), alloca);
+
+  BasicBlock *loopBlock = BasicBlock::Create(mContext, "loop", func);
+
+  mBuilder.CreateBr(loopBlock);
+  mBuilder.SetInsertPoint(loopBlock);
+
+  Value *currentVar = mBuilder.CreateLoad(alloca, "store_all_elements_counter");
+  
+  Value *workingElement = mBuilder.CreateGEP(newValue, PrefixZero(DoubleToInt(currentVar)));
+  Value *oldElem = mBuilder.CreateGEP(oldValue, PrefixZero(DoubleToInt(currentVar)));
+  
+  workingElement = mBuilder.CreateLoad(workingElement, "load_working_el");
+  mBuilder.CreateStore(workingElement, oldElem);
+
+  Value *stepVal = ConstantFP::get(mContext, APFloat(1.0));
+
+  Value *nextVar = mBuilder.CreateFAdd(currentVar, stepVal, "nextvar");
+  mBuilder.CreateStore(nextVar, alloca);
+
+  DataLayout *DL = new DataLayout (M);
+  if (ArrayType *newValType = cast<ArrayType>(newValue->getType()))
+    std::cout << "elems: " << newValType->getNumElements()/*/DL->getTypeAllocSize(newValType->getElementType())*/ << std::endl;
+
+  Value *comparisonCondition = mBuilder.CreateFCmpULT(
+		nextVar, 
+		ConstantFP::get(mContext, APFloat(
+      // (double)cast<ArrayType>(newValue->getType())->getNumElements()
+      (double)tArraySize
+    )), 
+		"cmptmp"
+	);
+  Value *endCondition = mBuilder.CreateUIToFP(comparisonCondition, Type::getDoubleTy(mContext), "booltmp");
+
+  endCondition = mBuilder.CreateFCmpONE(endCondition, ConstantFP::get(mContext, APFloat(0.0)), "loopcond");
+
+  BasicBlock *afterBlock = BasicBlock::Create(mContext, "afterloop", func);
+
+  mBuilder.CreateCondBr(endCondition, loopBlock, afterBlock);
+
+  mBuilder.SetInsertPoint(afterBlock);
+
+  return Constant::getNullValue(dType); // For loops always return 0.0
+}
+
 Value *NumberAST::codeGen() {
   return ConstantFP::get(mContext, APFloat(val));
 }
@@ -79,7 +129,10 @@ Value *VariableSetAST::codeGen() {
   if (!alloca) 
     return Parser::LogErrorV((std::string("Unknown Variable Name: ") + name).c_str()); 
 
-  return mBuilder.CreateStore(val->codeGen(), alloca);
+  // for some dumb reason we need to get every element in the array and store it
+  Value *calledValue = val->codeGen(); //TODO: this is temporary and will not work for most things
+
+  return StoreAllElements(calledValue, alloca); // mBuilder.CreateStore(calledValue, alloca);
 }
 
 Value *VarAST::codeGen() {
@@ -197,6 +250,8 @@ Value *BinaryAST::codeGen() {
 }
 
 Value *CallAST::codeGen() {
+  std::cout << "we are making a call \n";
+
   Function *fCallee = mModule->getFunction(callee);
   if (!fCallee) return Parser::LogErrorV((std::string("Unknown Function: ") + callee).c_str());
 
@@ -209,27 +264,27 @@ Value *CallAST::codeGen() {
     if (!argsV.back()) return nullptr;
   }
 
-  // we want to convert any return values form functions from pointers to their types (the only pointer we want to reutrn is from malloc and will be handled below)
+  Value *calledVal = mBuilder.CreateCall(fCallee, argsV, "calltmp");
 
-  std::vector<Value *> loadedGEPS;
-  Value *pCallValue = mBuilder.CreateCall(fCallee, argsV, "calltmp");
-
-  loadedGEPS.push_back(pCallValue);
-  while (dyn_cast<ArrayType>(pCallValue->getType())) {
-    pCallValue = mBuilder.CreateGEP(pCallValue, ZeroZero()); //TODO: this NEEDS to happen for EVERY element
-    loadedGEPS.push_back(pCallValue);
+  Value *tmpLoad = calledVal;
+  int depth = 0;
+  while (tmpLoad->getType()->isPointerTy()) {
+    tmpLoad = mBuilder.CreateLoad(tmpLoad, "tmp_load");
+    depth++;
   }
 
-  unsigned i = 0;
-  for (auto *g: loadedGEPS) {
-    if (i == 0) goto end;
-    pCallValue = mBuilder.CreateLoad(pCallValue, "called_pointee");
-    pCallValue = mBuilder.CreateStore(pCallValue, g);
-end:;
-    i++; 
+  if (tmpLoad) {
+    Type *arrayTypeToCastTo = ArrayTypeForType(tmpLoad->getType());
+    for (int i = 1; i < depth; i++)
+      arrayTypeToCastTo = ArrayTypeForType(arrayTypeToCastTo);
+
+    Instruction* castValue = new BitCastInst(calledVal, PointerType::getUnqual(arrayTypeToCastTo));
+    mBuilder.Insert(castValue);
+
+    calledVal = castValue;
   }
 
-  return pCallValue;
+  return calledVal;
 }
 
 Value *VCallAST::codeGen() {
@@ -252,11 +307,9 @@ Function *PrototypeAST::codeGen() {
   while (ArrayType *arrayForType = dyn_cast<ArrayType>(type)) {
     nestedArrayTypes.push_back(PointerType::getUnqual(type));
     type = arrayForType->getElementType();
+    if (!dyn_cast<ArrayType>(type)) type = PointerType::getUnqual(PointerType::getUnqual(type));
   }
 
-  for (auto *t: nestedArrayTypes)
-    type = ArrayPointerForType(type);
- 
   FunctionType *FT = FunctionType::get(type, doubles, false);
   Function *f = Function::Create(FT, Function::ExternalLinkage, name, M);
 
@@ -369,30 +422,16 @@ Function *LongFuncAST::codeGen() {
       type = arrayForType->getElementType();
     }
 
-    for (auto *t: nestedArrayTypes)
-      type = ArrayPointerForType(type);
+    if (VariableAST *retValAsVar = dynamic_cast<VariableAST *>(body[body.size() - 1].get())) // check to see if we can just return the var
+      if (AllocaInst *retValAlloca = namedValues[retValAsVar->name]) // if so try to get the var
+        returnValue = retValAlloca;
+      else {} // otherwise we need to goto below
+    else { //TODO: fill me in (store value)
+    }
 
-    Instruction* calledMallocValInst = new BitCastInst(mallocOfReturn, type);
+    Instruction* calledMallocValInst = new BitCastInst(returnValue, PointerType::getUnqual(PointerType::getUnqual(type)));
     mBuilder.Insert(calledMallocValInst);
     mallocOfReturn = calledMallocValInst;
-
-    std::vector<Value *> loadedGEPS;
-
-    loadedGEPS.push_back(mallocOfReturn);
-    while (dyn_cast<ArrayType>(mallocOfReturn->getType())) {
-      std::cout << "could convert to array \n";
-      mallocOfReturn = mBuilder.CreateGEP(mallocOfReturn, ZeroZero()); //TODO: this NEEDS to happen for EVERY element
-      loadedGEPS.push_back(mallocOfReturn);
-    }
-
-    unsigned i = 0;
-    for (auto *g: loadedGEPS) {
-      if (i == 0) goto end;
-      mallocOfReturn = mBuilder.CreateLoad(mallocOfReturn, "retval_pointee");
-      mallocOfReturn = mBuilder.CreateStore(mallocOfReturn, g);
-  end:;
-      i++; 
-    }
 
     mBuilder.CreateRet(mallocOfReturn); //we want a pointer of the return value, not the return value
 

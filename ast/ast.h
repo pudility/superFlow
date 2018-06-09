@@ -11,6 +11,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <type_traits>
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/APInt.h"
 #include "llvm/IR/Constants.h"
@@ -32,8 +33,14 @@ static Type *dType = Type::getDoubleTy(mContext);
 static Type *iType = Type::getInt64Ty(mContext);
 static Type *i8Type = Type::getInt8Ty(mContext);
 static PointerType *pI8Type = PointerType::getUnqual(i8Type);
-static Type *aType = ArrayType::get(dType, tArraySize); // TODO: implemnt x length
+static Type *aType = PointerType::getUnqual(dType); // ArrayType::get(dType, tArraySize); // TODO: implemnt x length
 static Value *nullValue = Constant::getNullValue(dType);
+
+template <typename T, typename = int>
+struct hasName : std::false_type { };
+
+template <typename T>
+struct hasName <T, decltype((void) T::name, 0)> : std::true_type { };
 
 class AST {
   public:
@@ -86,9 +93,8 @@ class ArrayElementSetAST: public AST {
 };
 
 class VariableAST: public AST {
-  std::string name;
-
   public:
+  std::string name;
   VariableAST(const std::string &name): name(name) { }
   llvm::Value *codeGen() override;
 };
