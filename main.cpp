@@ -123,7 +123,7 @@ static std::string run(char* argv[]) {
   IR += "define i32 @main() { \n";
 
   for (int i = 0; i < p->annonCount; i++)
-    IR += std::string("  call double *@__anon_expr") + std::to_string(i) + " ()\n";
+    IR += std::string("  call double @__anon_expr") + std::to_string(i) + " ()\n";
   IR += std::string("  ret i32 0 \n} \n");
 
 //  delete p;

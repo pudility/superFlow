@@ -88,8 +88,8 @@ static Value *StoreAllElements(Value *newValue, Value *oldValue) {
   mBuilder.CreateStore(nextVar, alloca);
 
   DataLayout *DL = new DataLayout (M);
-  if (ArrayType *newValType = cast<ArrayType>(newValue->getType()))
-    std::cout << "elems: " << newValType->getNumElements()/*/DL->getTypeAllocSize(newValType->getElementType())*/ << std::endl;
+  // if (ArrayType *newValType = cast<ArrayType>(newValue->getType()))
+  //   std::cout << "elems: " << newValType->getNumElements()/*/DL->getTypeAllocSize(newValType->getElementType())*/ << std::endl;
 
   Value *comparisonCondition = mBuilder.CreateFCmpULT(
 		nextVar, 
@@ -250,8 +250,6 @@ Value *BinaryAST::codeGen() {
 }
 
 Value *CallAST::codeGen() {
-  std::cout << "we are making a call \n";
-
   Function *fCallee = mModule->getFunction(callee);
   if (!fCallee) return Parser::LogErrorV((std::string("Unknown Function: ") + callee).c_str());
 
@@ -273,7 +271,7 @@ Value *CallAST::codeGen() {
     depth++;
   }
 
-  if (tmpLoad) {
+  if (depth > 0) {
     Type *arrayTypeToCastTo = ArrayTypeForType(tmpLoad->getType());
     for (int i = 1; i < depth; i++)
       arrayTypeToCastTo = ArrayTypeForType(arrayTypeToCastTo);
@@ -303,11 +301,16 @@ Function *PrototypeAST::codeGen() {
   for (auto &arg: arguments)
     doubles.push_back(arg.second);
 
+  int depth = 0;
   std::vector<Type *> nestedArrayTypes; //TODO: this does not need to be of type `Type` could just be an int
   while (ArrayType *arrayForType = dyn_cast<ArrayType>(type)) {
+    depth++;
+
     nestedArrayTypes.push_back(PointerType::getUnqual(type));
     type = arrayForType->getElementType();
-    if (!dyn_cast<ArrayType>(type)) type = PointerType::getUnqual(PointerType::getUnqual(type));
+    if (!dyn_cast<ArrayType>(type)) 
+      for (int i = 0; i < depth; i++)
+        type = PointerType::getUnqual(type);
   }
 
   FunctionType *FT = FunctionType::get(type, doubles, false);
@@ -412,14 +415,14 @@ Function *LongFuncAST::codeGen() {
     std::vector<Value *> varAsArg = { 
       ConstantInt::get(iType, DL->getTypeSizeInBits(returnValue->getType()))
     }; 
-    VCallAST *calledMalloc = new VCallAST("malloc", varAsArg);
-    Value *mallocOfReturn = calledMalloc->codeGen();
 
+    int depth = 0;
     Type *type = returnValue->getType();
     std::vector<Type *> nestedArrayTypes; //TODO: this does not need to be of type `Type` could just be an int
     while (ArrayType *arrayForType = dyn_cast<ArrayType>(type)) {
       nestedArrayTypes.push_back(PointerType::getUnqual(type));
       type = arrayForType->getElementType();
+      depth++;
     }
 
     if (VariableAST *retValAsVar = dynamic_cast<VariableAST *>(body[body.size() - 1].get())) // check to see if we can just return the var
@@ -429,11 +432,17 @@ Function *LongFuncAST::codeGen() {
     else { //TODO: fill me in (store value)
     }
 
-    Instruction* calledMallocValInst = new BitCastInst(returnValue, PointerType::getUnqual(PointerType::getUnqual(type)));
-    mBuilder.Insert(calledMallocValInst);
-    mallocOfReturn = calledMallocValInst;
+    if (depth > 0) {
+      for (int i = 0; i < depth; i++)
+        type = PointerType::getUnqual(type);
 
-    mBuilder.CreateRet(mallocOfReturn); //we want a pointer of the return value, not the return value
+      Instruction* calledMallocValInst = new BitCastInst(returnValue, type);
+      mBuilder.Insert(calledMallocValInst);
+
+      returnValue = calledMallocValInst;
+    }
+
+    mBuilder.CreateRet(returnValue); //we want a pointer of the return value, not the return value
 
     llvm::verifyFunction(*func);
 
