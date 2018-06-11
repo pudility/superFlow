@@ -8,8 +8,21 @@
 
 using namespace std;
 
+int lineCount = 0;
+
 /// printd - printf that takes a double prints it as "%f\n", returning 0.
 extern "C" DLLEXPORT double *printd(double X) {
   fprintf(stderr, "%f\n", X);
+  return 0;
+}
+
+extern "C" DLLEXPORT double *stepLineCount() {
+  fprintf(stderr, "%d\n", lineCount);
+  lineCount++;
+  return 0;
+}
+
+extern "C" DLLEXPORT double *setLineCount(int newCount) {
+  lineCount = newCount;
   return 0;
 }

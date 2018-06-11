@@ -62,7 +62,10 @@ static ArrayRef<Value *> ZeroZero () {
   return ArrayRef<Value *>(out);
 }
 
+static int numberOfLoops = 0;
 static Value *StoreAllElements(Value *newValue, Value *oldValue) {
+  numberOfLoops++;
+
   Function *func = mBuilder.GetInsertBlock()->getParent();
 
   AllocaInst *alloca = entryCreateBlockAlloca(func, "store_all_elements_counter");
@@ -79,12 +82,20 @@ static Value *StoreAllElements(Value *newValue, Value *oldValue) {
   Value *workingElement = mBuilder.CreateGEP(newValue, PrefixZero(DoubleToInt(currentVar)));
   Value *oldElem = mBuilder.CreateGEP(oldValue, PrefixZero(DoubleToInt(currentVar)));
   
-  workingElement = mBuilder.CreateLoad(workingElement, "load_working_el");
-  mBuilder.CreateStore(workingElement, oldElem);
+  Value *workingElementLoad = mBuilder.CreateLoad(workingElement, "load_working_el");
+  if (
+    dyn_cast<ArrayType>(
+      dyn_cast<ArrayType>(workingElementLoad->getType())->getElementType()
+    )
+  ) {
+    StoreAllElements(workingElement, oldElem);
+  }
+  else 
+    mBuilder.CreateStore(workingElementLoad, oldElem);
 
   Value *stepVal = ConstantFP::get(mContext, APFloat(1.0));
 
-  Value *nextVar = mBuilder.CreateFAdd(currentVar, stepVal, "nextvar");
+  Value *nextVar = mBuilder.CreateFAdd(currentVar, stepVal, "nested_loop_var" + (char)numberOfLoops);
   mBuilder.CreateStore(nextVar, alloca);
 
   DataLayout *DL = new DataLayout (M);
