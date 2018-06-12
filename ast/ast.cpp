@@ -22,7 +22,7 @@
 using namespace llvm;
 
 static Type *ArrayTypeForType(Type *type) {
-  return ArrayType::get(type, 4);
+  return ArrayType::get(type, arrayTSize);
 }
 
 static AllocaInst *entryCreateBlockAlloca(Function *func, std::string name) {
@@ -69,8 +69,15 @@ Value *VariableSetAST::codeGen() {
 }
 
 Value *VarAST::codeGen() {
+  // If its an array everything has already been done
+  if (type == VarType::type_array) {
+    Value *initVal = var.second->codeGen();
+    namedValues[var.first] = namedValues["__"];
+    return initVal; 
+  }
+
   Function *func = mBuilder.GetInsertBlock()->getParent();
-  
+
   std::string name = var.first;
   
   AST *init = var.second.get();
@@ -90,27 +97,46 @@ Value *VarAST::codeGen() {
 }
 
 Value *ArrayAST::codeGen() {
-  Value *emptyVector = UndefValue::get(ArrayTypeForType(numbers[0]->codeGen()->getType()));
-  
-  std::vector<Value *> numberValues;
-  Instruction *fullVector = InsertValueInst::Create(emptyVector, numbers[0]->codeGen(), 0);
-  mBuilder.Insert(fullVector);
+  std::vector<Value *> arrayValues;
+  Type *arrayType = numbers[0]->codeGen()->getType();
 
-  int i = 0;
-
-  for(auto const& n: numbers) {
-    if (i == 0) goto end; // We already did this one when we set fullVector
-    fullVector = InsertValueInst::Create(fullVector, n->codeGen(), i);
-    mBuilder.Insert(fullVector);
-end:;
-    i++;
+  for (auto const& n: numbers) {
+    auto code = n->codeGen();
+    if (code->getType()->isPointerTy()) {
+      code = mBuilder.CreateLoad(code, "loaded_value_before_store");
+      arrayType = code->getType();
+    } 
+    
+    arrayValues.push_back(code);
   }
-  
-  return fullVector;
+
+  ArrayType *ary = dyn_cast<ArrayType>(ArrayTypeForType(arrayType));
+  auto allocAry = new AllocaInst(ary, 0, "alloc_array", mBuilder.GetInsertBlock());
+
+  std::vector<Value *> ptrIndices;
+  ConstantInt *i320 = ConstantInt::get(M->getContext(), APInt(32, 0));
+
+  for (int index = 0; index < arrayValues.size(); ++index) {
+    ptrIndices.clear();
+    ptrIndices.push_back(i320);
+
+    ConstantInt* i32i = ConstantInt::get(M->getContext(), APInt(32, index));
+    ptrIndices.push_back(i32i);
+
+    Value *ptr = mBuilder.CreateGEP(allocAry, ptrIndices);
+    mBuilder.CreateStore(arrayValues[index], ptr);
+  }
+
+  if (name.empty() || name == "")
+    namedValues["__"] = allocAry;
+  else namedValues[name] = allocAry;
+
+  return allocAry;
 }
 
 Value *ArrayElementAST::codeGen() {
   AllocaInst *alloca = namedValues[name];
+  if (!alloca) return nullptr;
 
   // We have to use an instruction so we can pass variables as index
   Value *newArray = mBuilder.CreateGEP(alloca, PrefixZero(DoubleToInt(indexs[0]->codeGen())));
@@ -118,7 +144,7 @@ Value *ArrayElementAST::codeGen() {
     newArray = mBuilder.CreateGEP(newArray, PrefixZero(DoubleToInt(indexs[i]->codeGen()))); 
   }
 
-  return mBuilder.CreateLoad(newArray, "__"); // TODO: do we want to use `__` here?
+  return mBuilder.CreateLoad(newArray, "loaded_array_element");
 }
 
 Value *ArrayElementSetAST::codeGen() {
