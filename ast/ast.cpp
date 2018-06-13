@@ -354,32 +354,33 @@ Function *FuncAST::codeGen() {
   }
 
   if (Value *returnValue = body->codeGen()) {
-    DataLayout *DL = new DataLayout (M);
-    // We pass malloc a single arg but it needs to be a vector
-    std::vector<Value *> varAsArg = { 
-      ConstantInt::get(iType, DL->getTypeSizeInBits(returnValue->getType()))
-    }; 
-    VCallAST *calledMalloc = new VCallAST("malloc", varAsArg);
-    Value *mallocOfReturn = calledMalloc->codeGen();
-
-    std::vector<Value *> loadedGEPS;
-
-    loadedGEPS.push_back(mallocOfReturn);
-    while (dyn_cast<ArrayType>(mallocOfReturn->getType())) {
-      mallocOfReturn = mBuilder.CreateGEP(mallocOfReturn, ZeroZero()); //TODO: this NEEDS to happen for EVERY element
-      loadedGEPS.push_back(mallocOfReturn);
+    int depth = 0;
+    Type *type = returnValue->getType();
+    std::vector<Type *> nestedArrayTypes; //TODO: this does not need to be of type `Type` could just be an int
+    while (ArrayType *arrayForType = dyn_cast<ArrayType>(type)) {
+      nestedArrayTypes.push_back(PointerType::getUnqual(type));
+      type = arrayForType->getElementType();
+      depth++;
     }
 
-    unsigned i = 0;
-    for (auto *g: loadedGEPS) {
-      if (i == 0) goto end;
-      mallocOfReturn = mBuilder.CreateLoad(mallocOfReturn, "retval_pointee");
-      mallocOfReturn = mBuilder.CreateStore(mallocOfReturn, g);
-  end:;
-      i++; 
+    if (VariableAST *retValAsVar = dynamic_cast<VariableAST *>(body.get())) // check to see if we can just return the var
+      if (AllocaInst *retValAlloca = namedValues[retValAsVar->name]) // if so try to get the var
+        returnValue = retValAlloca;
+      else {} // otherwise we need to goto below
+    else { //TODO: fill me in (store value)
     }
 
-    mBuilder.CreateRet(mallocOfReturn); //we want a pointer of the return value, not the return value
+    if (depth > 0) {
+      for (int i = 0; i < depth; i++)
+        type = PointerType::getUnqual(type);
+
+      Instruction* calledMallocValInst = new BitCastInst(returnValue, type);
+      mBuilder.Insert(calledMallocValInst);
+
+      returnValue = calledMallocValInst;
+    }
+
+    mBuilder.CreateRet(returnValue); //we want a pointer of the return value, not the return value
 
     llvm::verifyFunction(*func);
 
@@ -417,12 +418,6 @@ Function *LongFuncAST::codeGen() {
   }
 
   if (Value *returnValue = body[body.size() - 1]->codeGen()) {
-    DataLayout *DL = new DataLayout (M);
-    // We pass malloc a single arg but it needs to be a vector
-    std::vector<Value *> varAsArg = { 
-      ConstantInt::get(iType, DL->getTypeSizeInBits(returnValue->getType()))
-    }; 
-
     int depth = 0;
     Type *type = returnValue->getType();
     std::vector<Type *> nestedArrayTypes; //TODO: this does not need to be of type `Type` could just be an int
