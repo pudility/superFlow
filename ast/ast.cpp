@@ -62,9 +62,8 @@ static ArrayRef<Value *> ZeroZero () {
   return ArrayRef<Value *>(out);
 }
 
-static int numberOfLoops = 0;
 static Value *StoreAllElements(Value *newValue, Value *oldValue) {
-  numberOfLoops++;
+	//TODO: if its an array of doubles none of the below needs to be run and we can just copy it
 
   Function *func = mBuilder.GetInsertBlock()->getParent();
 
@@ -83,24 +82,21 @@ static Value *StoreAllElements(Value *newValue, Value *oldValue) {
   Value *oldElem = mBuilder.CreateGEP(oldValue, PrefixZero(DoubleToInt(currentVar)));
   
   Value *workingElementLoad = mBuilder.CreateLoad(workingElement, "load_working_el");
-  if (
-    dyn_cast<ArrayType>(
-      dyn_cast<ArrayType>(workingElementLoad->getType())->getElementType()
-    )
-  ) {
-    StoreAllElements(workingElement, oldElem);
-  }
-  else 
-    mBuilder.CreateStore(workingElementLoad, oldElem);
+  if (auto *arrayTOfWorkingElLoad =  dyn_cast<ArrayType>(workingElementLoad->getType()))
+		if (dyn_cast<ArrayType>(arrayTOfWorkingElLoad->getElementType())) {
+			StoreAllElements(workingElement, oldElem);
+		}
+		else 
+			mBuilder.CreateStore(workingElementLoad, oldElem);
+	else 
+		mBuilder.CreateStore(workingElementLoad, oldElem);
 
   Value *stepVal = ConstantFP::get(mContext, APFloat(1.0));
 
-  Value *nextVar = mBuilder.CreateFAdd(currentVar, stepVal, "nested_loop_var" + (char)numberOfLoops);
+  Value *nextVar = mBuilder.CreateFAdd(currentVar, stepVal, "nested_loop_var");
   mBuilder.CreateStore(nextVar, alloca);
 
   DataLayout *DL = new DataLayout (M);
-  // if (ArrayType *newValType = cast<ArrayType>(newValue->getType()))
-  //   std::cout << "elems: " << newValType->getNumElements()/*/DL->getTypeAllocSize(newValType->getElementType())*/ << std::endl;
 
   Value *comparisonCondition = mBuilder.CreateFCmpULT(
 		nextVar, 
