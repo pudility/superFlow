@@ -28,6 +28,8 @@ static std::unique_ptr<Module> mModule = make_unique<Module>("Super", mContext);
 static std::map<std::string, AllocaInst *> namedValues;
 static Module *M = mModule.get();
 static Type *dType = Type::getDoubleTy(mContext);
+static Type *i32 = IntegerType::get(mContext, 32);
+static Type *pi8 = PointerType::getUnqual(IntegerType::get(mContext, 8));
 static Type *aType = ArrayType::get(dType, 4); // TODO: implemnt x length
 static Value *nullValue = Constant::getNullValue(dType);
 
@@ -41,6 +43,14 @@ class BaseFuncAST {
   public:
     virtual ~BaseFuncAST() { }
     virtual llvm::Function *codeGen() = 0;
+};
+
+class IntAST: public AST {
+  int val;
+
+  public:
+  IntAST(int val): val(val) { }
+  llvm::Value *codeGen() override;
 };
 
 class NumberAST: public AST {

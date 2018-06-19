@@ -57,6 +57,20 @@ static std::string handleExtern(Parser * &p) {
   return IR;
 }
 
+static std::string externMalloc() {
+  std::string IR;
+  raw_string_ostream OS(IR);
+
+  std::vector<std::pair<std::string, llvm::Type *>> argNames;
+  argNames.push_back(std::make_pair("x", i32));
+
+  auto *mallocProto = new PrototypeAST("malloc", std::move(argNames), pi8);
+  if (auto *etrnIR = mallocProto->codeGen())
+    etrnIR->print(OS);
+
+  return IR;
+}
+
 static std::string mainLoop(Parser * &p) {
   std::string IR;
 
@@ -93,7 +107,9 @@ static std::string run(char* argv[]) {
 
   p->getNextToken();
 
-  std::string IR = mainLoop(p);
+  std::string IR = externMalloc();
+
+  IR += mainLoop(p);
 
   IR += loadTopLevel(p);
 

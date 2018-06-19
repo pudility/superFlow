@@ -41,6 +41,11 @@ static Value *DoubleToInt (Value *doubleVal) {
   return mBuilder.CreateFPToUI(doubleVal, mBuilder.getInt32Ty());
 }
 
+static int SizeForType(Type *type) {
+  auto *DL = new DataLayout(M);
+  return DL->getPointerTypeSize(type);
+}
+
 static ArrayRef<Value *> PrefixZero (Value *index) {
   std::vector<Value *> out;
   out.push_back(ConstantInt::get(mContext, APInt(32, 0)));
@@ -48,8 +53,17 @@ static ArrayRef<Value *> PrefixZero (Value *index) {
   return ArrayRef<Value *>(out);
 }
 
+static ArrayRef<Value *> GEP(int index) {
+  auto *vIndex = ConstantInt::get(mContext, APInt(32, index));
+  return PrefixZero(vIndex);
+}
+
 Value *NumberAST::codeGen() {
   return ConstantFP::get(mContext, APFloat(val));
+}
+
+Value *IntAST::codeGen() {
+  return ConstantInt::get(mContext, APInt(32, val));
 }
 
 Value *VariableAST::codeGen() {
@@ -69,6 +83,9 @@ Value *VariableSetAST::codeGen() {
 }
 
 Value *VarAST::codeGen() {
+  if (namedValues.find(var.first) != namedValues.end()) 
+    return var.second.get()->codeGen();
+
   Function *func = mBuilder.GetInsertBlock()->getParent();
   
   std::string name = var.first;
@@ -90,23 +107,36 @@ Value *VarAST::codeGen() {
 }
 
 Value *ArrayAST::codeGen() {
-  Value *emptyVector = UndefValue::get(ArrayTypeForType(numbers[0]->codeGen()->getType()));
-  
-  std::vector<Value *> numberValues;
-  Instruction *fullVector = InsertValueInst::Create(emptyVector, numbers[0]->codeGen(), 0);
-  mBuilder.Insert(fullVector);
+  auto arrayLength = numbers.size();
+  auto arrayElementType = numbers[0]->codeGen()->getType();
+  auto *emptyArray = UndefValue::get(ArrayType::get(arrayElementType, arrayLength));
+  auto arraySize = SizeForType(emptyArray->getType());
+  std::unique_ptr<AST> arraySizeAST = llvm::make_unique<IntAST>(arraySize);
+  std::vector<std::unique_ptr<AST>>arraySizeAsVector;
+  arraySizeAsVector.push_back(std::move(arraySizeAST)); // We cant initialize with this variable becuase... ¯\_(ツ)_/¯
 
-  int i = 0;
+  auto *vMalloc = llvm::make_unique<CallAST>("malloc", std::move(arraySizeAsVector))->codeGen();
+  auto *castedMalloc = new BitCastInst(vMalloc, PointerType::getUnqual(arrayElementType));
+  mBuilder.Insert(castedMalloc);
 
-  for(auto const& n: numbers) {
-    if (i == 0) goto end; // We already did this one when we set fullVector
-    fullVector = InsertValueInst::Create(fullVector, n->codeGen(), i);
-    mBuilder.Insert(fullVector);
-end:;
-    i++;
-  }
-  
-  return fullVector;
+  //TODO: insert elements
+
+  //Create struct
+  std::vector<Type *> structTypes = { castedMalloc->getType(), i32 };
+  auto *structHolderT = StructType::get(mContext, structTypes);
+  auto *func = mBuilder.GetInsertBlock()->getParent();
+  auto *allocStruct = entryCreateBlockAllocaType(func, name, structHolderT);
+
+  //Insert elements
+  auto *elOne = mBuilder.CreateGEP(allocStruct, GEP(0));
+  auto *elTwo = mBuilder.CreateGEP(allocStruct, GEP(1));
+
+  // Store array pointer and length
+  mBuilder.CreateStore(castedMalloc, elOne);
+  mBuilder.CreateStore(ConstantInt::get(mContext, APInt(32, arrayLength)), elTwo);
+
+  namedValues[name] = allocStruct;
+  return mBuilder.CreateLoad(allocStruct, "init_alloca_load");
 }
 
 Value *ArrayElementAST::codeGen() {
