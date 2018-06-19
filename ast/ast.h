@@ -22,13 +22,14 @@
 
 using namespace llvm;
 
+static int aTypeSize = 3;
 static LLVMContext mContext;
 static IRBuilder<> mBuilder(mContext);
 static std::unique_ptr<Module> mModule = make_unique<Module>("Super", mContext);
 static std::map<std::string, AllocaInst *> namedValues;
 static Module *M = mModule.get();
 static Type *dType = Type::getDoubleTy(mContext);
-static Type *aType = ArrayType::get(dType, 4); // TODO: implemnt x length
+static Type *aType = ArrayType::get(dType, aTypeSize); // TODO: implemnt x length
 static Value *nullValue = Constant::getNullValue(dType);
 
 class AST {
@@ -63,10 +64,11 @@ class ArrayAST: public AST {
 class ArrayElementAST: public AST {
   std::string name;
   std::vector<std::unique_ptr<AST>> indexs;
+  bool returnPtr;
 
   public:
-  ArrayElementAST(std::string name, std::vector<std::unique_ptr<AST>> indexs): 
-    name(name), indexs(std::move(indexs)) { }
+  ArrayElementAST(std::string name, std::vector<std::unique_ptr<AST>> indexs, bool returnPtr = false): 
+    name(name), indexs(std::move(indexs)), returnPtr(returnPtr) { }
   Value *codeGen() override;
 };
 

@@ -22,7 +22,7 @@
 using namespace llvm;
 
 static Type *ArrayTypeForType(Type *type) {
-  return ArrayType::get(type, 4);
+  return ArrayType::get(type, aTypeSize);
 }
 
 static AllocaInst *entryCreateBlockAlloca(Function *func, std::string name) {
@@ -38,14 +38,31 @@ static AllocaInst *entryCreateBlockAllocaType(Function *func, std::string name, 
 
 // TODO: these methods should live elsewhere
 static Value *DoubleToInt (Value *doubleVal) {
+  doubleVal->print(errs());
+  std::cout << std::endl;
+
   return mBuilder.CreateFPToUI(doubleVal, mBuilder.getInt32Ty());
 }
 
 static ArrayRef<Value *> PrefixZero (Value *index) {
-  std::vector<Value *> out;
-  out.push_back(ConstantInt::get(mContext, APInt(32, 0)));
-  out.push_back(index);
-  return ArrayRef<Value *>(out);
+  index->print(errs());
+  if (auto *CI = dyn_cast<ConstantInt>(index)) {
+    std::vector<Value *> out;
+    out.push_back(ConstantInt::get(mContext, APInt(32, 0)));
+    out.push_back(CI);
+    return ArrayRef<Value *>(out);
+  } else if (auto *CI = dyn_cast<ConstantInt>(dyn_cast<Instruction>(index)->getOperand(1))) {
+    std::vector<Value *> out;
+    out.push_back(ConstantInt::get(mContext, APInt(32, 0)));
+    out.push_back(CI);
+    return ArrayRef<Value *>(out);
+  }
+
+  return Parser::LogErrorV("Index must be a number");
+}
+
+static ArrayRef<Value *> ElAtIndexGEP(int index) {
+  return PrefixZero(ConstantInt::get(mContext, APInt(32, index)));
 }
 
 Value *NumberAST::codeGen() {
@@ -69,6 +86,9 @@ Value *VariableSetAST::codeGen() {
 }
 
 Value *VarAST::codeGen() {
+  if (type == VarType::type_array)
+    return var.second.get()->codeGen();
+
   Function *func = mBuilder.GetInsertBlock()->getParent();
   
   std::string name = var.first;
@@ -90,23 +110,27 @@ Value *VarAST::codeGen() {
 }
 
 Value *ArrayAST::codeGen() {
-  Value *emptyVector = UndefValue::get(ArrayTypeForType(numbers[0]->codeGen()->getType()));
-  
-  std::vector<Value *> numberValues;
-  Instruction *fullVector = InsertValueInst::Create(emptyVector, numbers[0]->codeGen(), 0);
-  mBuilder.Insert(fullVector);
+  auto *firstElement = numbers[0]->codeGen();
+  auto *elementsType = firstElement->getType();
+  if (elementsType->isPointerTy())
+    elementsType = mBuilder.CreateLoad(firstElement, "first_element_load_for_type_in_struct_construction")->getType();
+  std::vector<Type *> elementTypes(aTypeSize, elementsType);
 
+  auto *mStructType = StructType::get(mContext, elementTypes);
+  if (!mBuilder.GetInsertBlock()) return UndefValue::get(mStructType); // if we are only creating an array for the type
+
+  auto *func = mBuilder.GetInsertBlock()->getParent();
+  auto *allocStruct = entryCreateBlockAllocaType(func, name, mStructType);
+ 
   int i = 0;
-
-  for(auto const& n: numbers) {
-    if (i == 0) goto end; // We already did this one when we set fullVector
-    fullVector = InsertValueInst::Create(fullVector, n->codeGen(), i);
-    mBuilder.Insert(fullVector);
-end:;
+  for (auto &n: numbers) {
+    auto *elementPtr = mBuilder.CreateGEP(allocStruct, ElAtIndexGEP(i));
+    mBuilder.CreateStore(n->codeGen(), elementPtr);
     i++;
   }
-  
-  return fullVector;
+
+  namedValues[name] = allocStruct;
+  return allocStruct;
 }
 
 Value *ArrayElementAST::codeGen() {
@@ -118,33 +142,17 @@ Value *ArrayElementAST::codeGen() {
     newArray = mBuilder.CreateGEP(newArray, PrefixZero(DoubleToInt(indexs[i]->codeGen()))); 
   }
 
+  if (returnPtr) return newArray;
   return mBuilder.CreateLoad(newArray, "__"); // TODO: do we want to use `__` here?
 }
 
 Value *ArrayElementSetAST::codeGen() {
-  std::vector<Value *> emptyArgs; // We need to pass it this so we make an empty one
-  AllocaInst *alloca = namedValues[name];
-  
-  std::vector<Value *> extracts;
-  
-  if (indexs.size() > 0) {
-    Value *newArray = 
-      mBuilder.CreateGEP(alloca, PrefixZero(DoubleToInt(indexs[0]->codeGen())));
-    extracts.push_back(newArray);
+  auto *elementAST = new ArrayElementAST(name, std::move(indexs), true);
+  auto *elementValue = elementAST->codeGen();
 
-    for (unsigned i = 1; i < indexs.size(); i++) {
-      newArray = 
-        mBuilder.CreateGEP(
-          extracts[extracts.size() - 1], PrefixZero(DoubleToInt(indexs[i]->codeGen()))
-        ); 
-      extracts.push_back(newArray);
-    }
+  mBuilder.CreateStore(newVal->codeGen(), elementValue);
 
-    std::reverse(extracts.begin(), extracts.end());
-    std::reverse(indexs.begin(), indexs.end());
-  }
-  
-  mBuilder.CreateStore(newVal->codeGen(), extracts[0]);
+  delete elementAST;
   return nullValue; 
 }
 
