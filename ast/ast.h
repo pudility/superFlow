@@ -71,12 +71,13 @@ class ArrayAST: public AST {
 };
 
 class ArrayElementAST: public AST {
+  bool returnPtr;
   std::string name;
   std::vector<std::unique_ptr<AST>> indexs;
 
   public:
-  ArrayElementAST(std::string name, std::vector<std::unique_ptr<AST>> indexs): 
-    name(name), indexs(std::move(indexs)) { }
+  ArrayElementAST(std::string name, std::vector<std::unique_ptr<AST>> indexs, bool returnPtr = false): 
+    name(name), returnPtr(returnPtr), indexs(std::move(indexs)) { }
   Value *codeGen() override;
 };
 

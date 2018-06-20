@@ -58,6 +58,16 @@ static ArrayRef<Value *> GEP(int index) {
   return PrefixZero(vIndex);
 }
 
+static ArrayRef<Value *> PGEP(Value *index) {
+  std::vector<Value *>indexAsVec = { index };
+  return ArrayRef<Value *>(indexAsVec);
+}
+
+static ArrayRef<Value *> PGEP(int index) {
+  std::vector<Value *>indexAsVec = { ConstantInt::get(mContext, APInt(64, index)) };
+  return ArrayRef<Value *>(indexAsVec);
+}
+
 Value *NumberAST::codeGen() {
   return ConstantFP::get(mContext, APFloat(val));
 }
@@ -140,41 +150,24 @@ Value *ArrayAST::codeGen() {
 }
 
 Value *ArrayElementAST::codeGen() {
-  AllocaInst *alloca = namedValues[name];
+  auto *structAlloca = namedValues[name];
+  auto *alloca = mBuilder.CreateGEP(structAlloca, GEP(0)); // we only want the first element because that is the array pointer
+  alloca = mBuilder.CreateLoad(alloca, "load_array_ptr"); //TODO: unclear why we need this
 
   // We have to use an instruction so we can pass variables as index
-  Value *newArray = mBuilder.CreateGEP(alloca, PrefixZero(DoubleToInt(indexs[0]->codeGen())));
+  Value *newArray = mBuilder.CreateGEP(alloca, PGEP(indexs[0]->codeGen())); //PrefixZero(DoubleToInt(indexs[0]->codeGen())));
   for (unsigned i = 1; i < indexs.size(); i++) {
-    newArray = mBuilder.CreateGEP(newArray, PrefixZero(DoubleToInt(indexs[i]->codeGen()))); 
+    newArray = mBuilder.CreateGEP(newArray, PGEP(indexs[i]->codeGen())); 
   }
 
-  return mBuilder.CreateLoad(newArray, "__"); // TODO: do we want to use `__` here?
+  if (returnPtr) return newArray;
+  return mBuilder.CreateLoad(newArray, "final_element"); 
 }
 
 Value *ArrayElementSetAST::codeGen() {
-  std::vector<Value *> emptyArgs; // We need to pass it this so we make an empty one
-  AllocaInst *alloca = namedValues[name];
+  auto *element = llvm::make_unique<ArrayElementAST>(name, std::move(indexs), /*pointer=*/true)->codeGen();
   
-  std::vector<Value *> extracts;
-  
-  if (indexs.size() > 0) {
-    Value *newArray = 
-      mBuilder.CreateGEP(alloca, PrefixZero(DoubleToInt(indexs[0]->codeGen())));
-    extracts.push_back(newArray);
-
-    for (unsigned i = 1; i < indexs.size(); i++) {
-      newArray = 
-        mBuilder.CreateGEP(
-          extracts[extracts.size() - 1], PrefixZero(DoubleToInt(indexs[i]->codeGen()))
-        ); 
-      extracts.push_back(newArray);
-    }
-
-    std::reverse(extracts.begin(), extracts.end());
-    std::reverse(indexs.begin(), indexs.end());
-  }
-  
-  mBuilder.CreateStore(newVal->codeGen(), extracts[0]);
+  mBuilder.CreateStore(newVal->codeGen(), element);
   return nullValue; 
 }
 
