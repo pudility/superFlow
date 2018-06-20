@@ -58,7 +58,7 @@ std::unique_ptr<AST> Parser::ParseArray(std::string name) {
   getNextToken(); // Move past `[`
   std::vector<std::unique_ptr<AST>> numbers;
 
-  while (currentToken != ']')
+  while (currentToken != ']') 
     numbers.push_back(ParseExpression());
   
   getNextToken(); // Move over `]`

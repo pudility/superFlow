@@ -116,12 +116,13 @@ Value *VarAST::codeGen() {
   return mBuilder.CreateStore(initVal, alloca);
 }
 
+// Arrays are in the following format: { arr_ptr, length, has_children } // has_children: 1 = true, 0 = false
 Value *ArrayAST::codeGen() {
   auto arrayLength = numbers.size();
   auto arrayElementType = numbers[0]->codeGen()->getType();
   auto *emptyArray = UndefValue::get(ArrayType::get(arrayElementType, arrayLength));
   auto arraySize = SizeForType(emptyArray->getType());
-  std::unique_ptr<AST> arraySizeAST = llvm::make_unique<IntAST>(arraySize);
+  std::unique_ptr<AST> arraySizeAST = llvm::make_unique<IntAST>(arraySize * numbers.size());
   std::vector<std::unique_ptr<AST>>arraySizeAsVector;
   arraySizeAsVector.push_back(std::move(arraySizeAST)); // We cant initialize with this variable becuase... ¯\_(ツ)_/¯
 
@@ -129,7 +130,16 @@ Value *ArrayAST::codeGen() {
   auto *castedMalloc = new BitCastInst(vMalloc, PointerType::getUnqual(arrayElementType));
   mBuilder.Insert(castedMalloc);
 
-  //TODO: insert elements
+  int i  = 0;
+  int depth = 1;
+  for (auto &n: numbers) {
+    if (dynamic_cast<ArrayAST *>(n.get()))
+      depth++;
+
+    auto *element = mBuilder.CreateGEP(castedMalloc, PGEP(i));
+    mBuilder.CreateStore(n->codeGen(), element);
+    i++;
+  }
 
   //Create struct
   std::vector<Type *> structTypes = { castedMalloc->getType(), i32 };
@@ -145,20 +155,32 @@ Value *ArrayAST::codeGen() {
   mBuilder.CreateStore(castedMalloc, elOne);
   mBuilder.CreateStore(ConstantInt::get(mContext, APInt(32, arrayLength)), elTwo);
 
+  std::cout << "current depth: " << arrayDepths[name] << std::endl;
+  arrayDepths[name] = depth;
+  std::cout << "next depth: " << arrayDepths[name] << std::endl;
+
   namedValues[name] = allocStruct;
   return mBuilder.CreateLoad(allocStruct, "init_alloca_load");
 }
 
 Value *ArrayElementAST::codeGen() {
   auto *structAlloca = namedValues[name];
-  auto *alloca = mBuilder.CreateGEP(structAlloca, GEP(0)); // we only want the first element because that is the array pointer
-  alloca = mBuilder.CreateLoad(alloca, "load_array_ptr"); //TODO: unclear why we need this
+  auto depth = arrayDepths[name];
+  std::cout << "Depth: " << depth << std::endl;
 
-  // We have to use an instruction so we can pass variables as index
-  Value *newArray = mBuilder.CreateGEP(alloca, PGEP(indexs[0]->codeGen())); //PrefixZero(DoubleToInt(indexs[0]->codeGen())));
-  for (unsigned i = 1; i < indexs.size(); i++) {
-    newArray = mBuilder.CreateGEP(newArray, PGEP(indexs[i]->codeGen())); 
+  // {{...}}
+  auto *alloca = mBuilder.CreateGEP(structAlloca, GEP(0)); // we only want the first element because that is the array pointer
+  Value *newArray = mBuilder.CreateLoad(alloca, "load_array_ptr");
+
+  while (depth > 0) {
+    // {...}
+    newArray = mBuilder.CreateGEP(newArray, GEP(0));
+    newArray = mBuilder.CreateLoad(newArray);
+    depth--;
   }
+
+  // double*
+  newArray = mBuilder.CreateGEP(newArray, PGEP(0)); 
 
   if (returnPtr) return newArray;
   return mBuilder.CreateLoad(newArray, "final_element"); 

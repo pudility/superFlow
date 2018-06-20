@@ -26,6 +26,7 @@ static LLVMContext mContext;
 static IRBuilder<> mBuilder(mContext);
 static std::unique_ptr<Module> mModule = make_unique<Module>("Super", mContext);
 static std::map<std::string, AllocaInst *> namedValues;
+static std::map<std::string, int> arrayDepths;
 static Module *M = mModule.get();
 static Type *dType = Type::getDoubleTy(mContext);
 static Type *i32 = IntegerType::get(mContext, 32);
@@ -66,7 +67,8 @@ class ArrayAST: public AST {
   std::string name;
 
   public:
-  ArrayAST(std::vector<std::unique_ptr<AST>> numbers, std::string name): numbers(std::move(numbers)), name(name) { }
+  ArrayAST(std::vector<std::unique_ptr<AST>> numbers, std::string name): 
+    numbers(std::move(numbers)), name(name) { }
   llvm::Value *codeGen() override;
 };
 
