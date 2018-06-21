@@ -130,18 +130,26 @@ Value *ArrayAST::codeGen() {
   auto *castedMalloc = new BitCastInst(vMalloc, PointerType::getUnqual(arrayElementType));
   mBuilder.Insert(castedMalloc);
 
-  int i  = 0;
+  // Get and store the depth of the array
+  // this is done by looping through the 
+  // value of the first element recusively 
+  // until it is not castable to an array 
+  // type anymore
   int depth = 1;
-  for (auto &n: numbers) {
-    auto *nAsArrayAST = dynamic_cast<ArrayAST *>(n.get());
-    while (true) {
-      if (nAsArrayAST)
-        depth++;
-      else 
-        break;
-      nAsArrayAST = dynamic_cast<ArrayAST *>(nAsArrayAST->numbers[0].get());
-    }
+  auto *nAsArrayAST = dynamic_cast<ArrayAST *>(numbers[0].get());
+  while (true) {
+    if (nAsArrayAST)
+      depth++;
+    else 
+      break;
+    nAsArrayAST = dynamic_cast<ArrayAST *>(nAsArrayAST->numbers[0].get());
+  }
+  arrayDepths[name] = depth; // It is important we set this before anything ...
+  // ... is returned because otherwise the wrong thing could be indexed in the wrong way.
 
+  // store all the elements
+  int i  = 0;
+  for (auto &n: numbers) {
     auto *element = mBuilder.CreateGEP(castedMalloc, PGEP(i));
     mBuilder.CreateStore(n->codeGen(), element);
     i++;
@@ -150,6 +158,7 @@ Value *ArrayAST::codeGen() {
   //Create struct
   std::vector<Type *> structTypes = { castedMalloc->getType(), i32 };
   auto *structHolderT = StructType::get(mContext, structTypes);
+  if (!mBuilder.GetInsertBlock()) return UndefValue::get(structHolderT); // If we are not in a function we only want the type
   auto *func = mBuilder.GetInsertBlock()->getParent();
   auto *allocStruct = entryCreateBlockAllocaType(func, name, structHolderT);
 
@@ -161,7 +170,6 @@ Value *ArrayAST::codeGen() {
   mBuilder.CreateStore(castedMalloc, elOne);
   mBuilder.CreateStore(ConstantInt::get(mContext, APInt(32, arrayLength)), elTwo);
 
-  arrayDepths[name] = depth;
   namedValues[name] = allocStruct;
   return mBuilder.CreateLoad(allocStruct, "init_alloca_load");
 }

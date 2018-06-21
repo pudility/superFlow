@@ -64,9 +64,9 @@ class NumberAST: public AST {
 
 class ArrayAST: public AST {
   std::vector<std::unique_ptr<AST>> numbers;
-  std::string name;
 
   public:
+  std::string name;
   ArrayAST(std::vector<std::unique_ptr<AST>> numbers, std::string name): 
     numbers(std::move(numbers)), name(name) { }
   llvm::Value *codeGen() override;

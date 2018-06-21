@@ -198,7 +198,13 @@ std::unique_ptr<PrototypeAST> Parser::ParsePrototype() {
     while (currentToken != ')' /*== Token::token_id*/) {
       std::string argName = mLexer->identifier;
       getNextToken(); // Move past id
-      argNames.push_back(std::make_pair(argName, ParsePrimary()->codeGen()->getType()));
+
+      auto argAST = ParsePrimary();
+      if (auto *argAsArrayAST = dynamic_cast<ArrayAST *>(argAST.get())) {
+        argAsArrayAST->name = argName;
+        argNames.push_back(std::make_pair(argName, argAsArrayAST->codeGen()->getType()));
+      } else
+        argNames.push_back(std::make_pair(argName, argAST->codeGen()->getType()));
     }
 
     if (currentToken != ')') return LogErrorPlain("Expected to end with `)` (Prototype)");
