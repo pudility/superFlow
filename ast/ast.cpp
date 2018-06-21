@@ -133,8 +133,14 @@ Value *ArrayAST::codeGen() {
   int i  = 0;
   int depth = 1;
   for (auto &n: numbers) {
-    if (dynamic_cast<ArrayAST *>(n.get()))
-      depth++;
+    auto *nAsArrayAST = dynamic_cast<ArrayAST *>(n.get());
+    while (true) {
+      if (nAsArrayAST)
+        depth++;
+      else 
+        break;
+      nAsArrayAST = dynamic_cast<ArrayAST *>(nAsArrayAST->numbers[0].get());
+    }
 
     auto *element = mBuilder.CreateGEP(castedMalloc, PGEP(i));
     mBuilder.CreateStore(n->codeGen(), element);
@@ -171,16 +177,20 @@ Value *ArrayElementAST::codeGen() {
   // {{...}}
   auto *alloca = mBuilder.CreateGEP(structAlloca, GEP(0)); // we only want the first element because that is the array pointer
   Value *newArray = mBuilder.CreateLoad(alloca, "load_array_ptr");
+  newArray->print(errs());
 
-  while (depth > 0) {
+  while (depth > 1) {
     // {...}
+    std::cout << "starting \n";
     newArray = mBuilder.CreateGEP(newArray, GEP(0));
     newArray = mBuilder.CreateLoad(newArray);
+    newArray->print(errs());
     depth--;
   }
 
   // double*
   newArray = mBuilder.CreateGEP(newArray, PGEP(0)); 
+  newArray->print(errs());
 
   if (returnPtr) return newArray;
   return mBuilder.CreateLoad(newArray, "final_element"); 
