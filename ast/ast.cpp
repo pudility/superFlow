@@ -161,10 +161,7 @@ Value *ArrayAST::codeGen() {
   mBuilder.CreateStore(castedMalloc, elOne);
   mBuilder.CreateStore(ConstantInt::get(mContext, APInt(32, arrayLength)), elTwo);
 
-  std::cout << "current depth: " << arrayDepths[name] << std::endl;
   arrayDepths[name] = depth;
-  std::cout << "next depth: " << arrayDepths[name] << std::endl;
-
   namedValues[name] = allocStruct;
   return mBuilder.CreateLoad(allocStruct, "init_alloca_load");
 }
@@ -172,25 +169,20 @@ Value *ArrayAST::codeGen() {
 Value *ArrayElementAST::codeGen() {
   auto *structAlloca = namedValues[name];
   auto depth = arrayDepths[name];
-  std::cout << "Depth: " << depth << std::endl;
 
   // {{...}}
   auto *alloca = mBuilder.CreateGEP(structAlloca, GEP(0)); // we only want the first element because that is the array pointer
   Value *newArray = mBuilder.CreateLoad(alloca, "load_array_ptr");
-  newArray->print(errs());
 
   while (depth > 1) {
     // {...}
-    std::cout << "starting \n";
     newArray = mBuilder.CreateGEP(newArray, GEP(0));
     newArray = mBuilder.CreateLoad(newArray);
-    newArray->print(errs());
     depth--;
   }
 
   // double*
   newArray = mBuilder.CreateGEP(newArray, PGEP(0)); 
-  newArray->print(errs());
 
   if (returnPtr) return newArray;
   return mBuilder.CreateLoad(newArray, "final_element"); 
