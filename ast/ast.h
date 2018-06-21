@@ -26,8 +26,11 @@ static LLVMContext mContext;
 static IRBuilder<> mBuilder(mContext);
 static std::unique_ptr<Module> mModule = make_unique<Module>("Super", mContext);
 static std::map<std::string, AllocaInst *> namedValues;
+static std::map<std::string, int> arrayDepths;
 static Module *M = mModule.get();
 static Type *dType = Type::getDoubleTy(mContext);
+static Type *i32 = IntegerType::get(mContext, 32);
+static Type *pi8 = PointerType::getUnqual(IntegerType::get(mContext, 8));
 static Type *aType = ArrayType::get(dType, 4); // TODO: implemnt x length
 static Value *nullValue = Constant::getNullValue(dType);
 
@@ -43,6 +46,14 @@ class BaseFuncAST {
     virtual llvm::Function *codeGen() = 0;
 };
 
+class IntAST: public AST {
+  int val;
+
+  public:
+  IntAST(int val): val(val) { }
+  llvm::Value *codeGen() override;
+};
+
 class NumberAST: public AST {
   double val;
 
@@ -53,20 +64,22 @@ class NumberAST: public AST {
 
 class ArrayAST: public AST {
   std::vector<std::unique_ptr<AST>> numbers;
-  std::string name;
 
   public:
-  ArrayAST(std::vector<std::unique_ptr<AST>> numbers, std::string name): numbers(std::move(numbers)), name(name) { }
+  std::string name;
+  ArrayAST(std::vector<std::unique_ptr<AST>> numbers, std::string name): 
+    numbers(std::move(numbers)), name(name) { }
   llvm::Value *codeGen() override;
 };
 
 class ArrayElementAST: public AST {
+  bool returnPtr;
   std::string name;
   std::vector<std::unique_ptr<AST>> indexs;
 
   public:
-  ArrayElementAST(std::string name, std::vector<std::unique_ptr<AST>> indexs): 
-    name(name), indexs(std::move(indexs)) { }
+  ArrayElementAST(std::string name, std::vector<std::unique_ptr<AST>> indexs, bool returnPtr = false): 
+    name(name), returnPtr(returnPtr), indexs(std::move(indexs)) { }
   Value *codeGen() override;
 };
 
